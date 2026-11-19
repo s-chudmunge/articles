@@ -1,7 +1,7 @@
 ---
-title: "What is Jev? The System One Model and Architecture Blueprint"
-slug: "what-is-jev-system-one-architecture"
-shortSlug: "what-is-jev"
+title: "What is Jev?"
+subtitle: "The System One Model and Architecture Blueprint"
+slug: "what-is-jev"
 author: "Sankalp Chudmunge"
 date: "September 25, 2026"
 subject: "Machine Learning"

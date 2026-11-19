@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What is Jev? The System One Model and Architecture Blueprint | Sankalp Chudmunge</title>
+<title>What is Jev?: The System One Model and Architecture Blueprint | Sankalp Chudmunge</title>
 
 <!-- Primary SEO Meta Tags -->
-<meta name="title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta name="title" content="What is Jev?: The System One Model and Architecture Blueprint">
 <meta name="description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
 <meta name="author" content="Sankalp Chudmunge">
-<meta name="keywords" content="What is Jev? The System One Model and Architecture Blueprint, Machine Learning, Sankalp Chudmunge, Jev, System One AI, RLCD, Decision Models, Non-Autoregressive Transformers, TypeSafe, Structured Outputs">
-<link rel="canonical" href="https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/">
+<meta name="keywords" content="What is Jev?, Machine Learning, Sankalp Chudmunge, Jev, System One AI, RLCD, Decision Models, Non-Autoregressive Transformers, TypeSafe, Structured Outputs">
+<link rel="canonical" href="https://s-chudmunge.github.io/articles/what-is-jev/">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Sankalp Chudmunge">
-<meta property="og:url" content="https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/">
-<meta property="og:title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta property="og:url" content="https://s-chudmunge.github.io/articles/what-is-jev/">
+<meta property="og:title" content="What is Jev?: The System One Model and Architecture Blueprint">
 <meta property="og:description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
 <meta property="og:image" content="https://s-chudmunge.github.io/articles/images/articles/jev-architecture-blueprint.png">
 <meta property="og:image:width" content="1200">
@@ -30,8 +30,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@CompleteSkeptic">
 <meta name="twitter:creator" content="@CompleteSkeptic">
-<meta name="twitter:url" content="https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/">
-<meta name="twitter:title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta name="twitter:url" content="https://s-chudmunge.github.io/articles/what-is-jev/">
+<meta name="twitter:title" content="What is Jev?: The System One Model and Architecture Blueprint">
 <meta name="twitter:description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
 <meta name="twitter:image" content="https://s-chudmunge.github.io/articles/images/articles/jev-architecture-blueprint.png">
 
@@ -42,20 +42,20 @@
   "@graph": [
     {
       "@type": "TechArticle",
-      "@id": "https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/#article",
+      "@id": "https://s-chudmunge.github.io/articles/what-is-jev/#article",
       "isPartOf": {
         "@type": "WebSite",
         "@id": "https://s-chudmunge.github.io/articles/#website",
         "name": "Sankalp Chudmunge Articles",
         "url": "https://s-chudmunge.github.io/articles/"
       },
-      "headline": "What is Jev? The System One Model and Architecture Blueprint",
+      "headline": "What is Jev?: The System One Model and Architecture Blueprint",
       "description": "Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.",
       "image": "https://s-chudmunge.github.io/articles/images/articles/jev-architecture-blueprint.png",
       "datePublished": "2026-09-25T00:00:00Z",
       "dateModified": "2026-09-25T00:00:00Z",
       "inLanguage": "en-US",
-      "mainEntityOfPage": "https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/",
+      "mainEntityOfPage": "https://s-chudmunge.github.io/articles/what-is-jev/",
       "author": {
         "@type": "Person",
         "name": "Sankalp Chudmunge",
@@ -81,7 +81,7 @@
     },
     {
       "@type": "BreadcrumbList",
-      "@id": "https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/#breadcrumb",
+      "@id": "https://s-chudmunge.github.io/articles/what-is-jev/#breadcrumb",
       "itemListElement": [
         {
           "@type": "ListItem",
@@ -98,7 +98,7 @@
         {
           "@type": "ListItem",
           "position": 3,
-          "name": "What is Jev? The System One Model and Architecture Blueprint"
+          "name": "What is Jev?"
         }
       ]
     }
@@ -141,12 +141,15 @@
     --code-border: #e1e4e8;
     --quote-bg: #f8f9fb;
     --quote-border: #00369f;
-    --table-header: #f6f8fa;
-    --table-hover: #f9fafb;
     --nav-bg: rgba(255, 255, 255, 0.95);
     --btn-bg: #f3f4f6;
     --btn-text: #24292f;
     --btn-border: #d0d7de;
+    
+    /* Academic Booktabs Table Rules */
+    --table-rule-thick: #24292f;
+    --table-rule-thin: #d0d7de;
+    --table-row-hover: rgba(0, 0, 0, 0.02);
     
     /* Academic Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -169,12 +172,14 @@
     --code-border: #30363d;
     --quote-bg: #131922;
     --quote-border: #388bfd;
-    --table-header: #161b22;
-    --table-hover: #1c2129;
     --nav-bg: rgba(13, 17, 23, 0.95);
     --btn-bg: #21262d;
     --btn-text: #c9d1d9;
     --btn-border: #363b42;
+    
+    --table-rule-thick: #c9d1d9;
+    --table-rule-thin: #30363d;
+    --table-row-hover: rgba(255, 255, 255, 0.03);
   }
 
   /* Font Mode Switcher */
@@ -193,7 +198,7 @@
     font-family: var(--font-body);
     background-color: var(--bg-page);
     color: var(--text-main);
-    line-height: 1.75;
+    line-height: 1.78;
     padding: 0 0 5rem 0;
     transition: background-color 0.25s ease, color 0.25s ease;
     text-rendering: optimizeLegibility;
@@ -286,7 +291,7 @@
     border-color: var(--link-color);
   }
 
-  /* Content Wrapper: Exact Al-Folio 740px Reading Measure */
+  /* Content Wrapper: 760px Academic Reading Measure */
   .page-content {
     padding-top: 5.5rem;
   }
@@ -315,12 +320,21 @@
 
   h1.post-title {
     font-family: var(--font-sans);
-    font-size: clamp(2.15rem, 4.2vw, 2.75rem);
+    font-size: clamp(2.35rem, 4.5vw, 3rem);
     font-weight: 800;
-    line-height: 1.2;
+    line-height: 1.15;
     letter-spacing: -0.03em;
     color: var(--text-main);
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .post-subtitle {
+    font-family: var(--font-sans);
+    font-size: 1.3rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--text-muted);
+    margin-bottom: 1.15rem;
   }
 
   .post-meta {
@@ -346,7 +360,7 @@
   }
 
   .post-content p {
-    margin: 1.5rem 0;
+    margin: 1.55rem 0;
   }
 
   .post-content h2 {
@@ -513,40 +527,69 @@
     padding: 0 1rem;
   }
 
-  /* Academic Tables */
+  /* ====================================================================
+     Academic Booktabs Table Styling (LaTeX / Nature Journal Style)
+     Zero ChatGPT boxiness: no outer box, no vertical rules, crisp rules
+     ==================================================================== */
   .table-wrapper {
     width: 100%;
     overflow-x: auto;
-    margin: 2.25rem 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-card);
+    margin: 2.75rem 0 0.65rem 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
-  table {
+  table.booktabs {
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-sans);
-    font-size: 0.925rem;
+    font-size: 0.935rem;
+    line-height: 1.55;
+    border-top: 2.2px solid var(--table-rule-thick);
+    border-bottom: 2.2px solid var(--table-rule-thick);
+    background: transparent;
   }
-  th, td {
-    padding: 0.85rem 1.15rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: top;
-  }
-  th {
-    background: var(--table-header);
+  table.booktabs th {
     font-weight: 700;
-    font-size: 0.825rem;
+    font-size: 0.835rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted);
+    color: var(--text-main);
+    padding: 0.85rem 1.15rem;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1.2px solid var(--table-rule-thick);
+    background: transparent;
+    vertical-align: bottom;
+    text-align: left;
   }
-  tr:last-child td {
+  table.booktabs td {
+    padding: 0.85rem 1.15rem;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--table-rule-thin);
+    vertical-align: top;
+    color: var(--text-main);
+    background: transparent;
+    text-align: left;
+  }
+  table.booktabs tr:last-child td {
     border-bottom: none;
   }
-  tr:hover td {
-    background: var(--table-hover);
+  table.booktabs tr:hover td {
+    background-color: var(--table-row-hover);
+  }
+  .table-caption {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 0.65rem;
+    margin-bottom: 2.75rem;
+    line-height: 1.55;
+    text-align: left;
   }
 
   /* Embedded Loom Video */
@@ -631,9 +674,10 @@
     .header-wrapper { padding: 0 15px; }
     .site-nav { gap: 0.75rem; }
     .post-wrapper { padding: 0 16px; }
-    h1.post-title { font-size: 1.85rem; }
+    h1.post-title { font-size: 2rem; }
+    .post-subtitle { font-size: 1.15rem; }
     .post-content { font-size: 1.05rem; }
-    th, td { padding: 0.65rem 0.75rem; font-size: 0.85rem; }
+    table.booktabs th, table.booktabs td { padding: 0.65rem 0.75rem; font-size: 0.85rem; }
   }
 </style>
 </head>
@@ -665,7 +709,8 @@
     <main class="post">
       <header class="post-header">
         <span class="post-category">Machine Learning</span>
-        <h1 class="post-title">What is Jev? The System One Model and Architecture Blueprint</h1>
+        <h1 class="post-title">What is Jev?</h1>
+        <p class="post-subtitle">The System One Model and Architecture Blueprint</p>
         <p class="post-meta">
           <span>September 25, 2026</span>
           <span class="separator">•</span>
@@ -679,7 +724,7 @@
           <p><strong>Overview:</strong> Jev replaces autoregressive next-token decoding with parallel forward evaluation over a shared context state. Rather than generating JSON strings sequentially, learned classification heads compute calibrated probability distributions across typed primitives in a single pass.</p>
         </blockquote>
 
-      <div class="img_row"><img src="../images/articles/jev-architecture-blueprint.png" alt="What is Jev? The System One Model and Architecture Blueprint"></div>
+      <div class="img_row"><img src="../images/articles/jev-architecture-blueprint.png" alt="What is Jev?"></div>
 
       <article class="post-content">
         <p>When an autonomous agent needs to decide whether to run a database query, or a support system routes an incoming ticket, standard engineering practice today involves prompting a large autoregressive language model. The model receives a prompt, enters an autoregressive loop, generates tokens one by one, formats them into a JSON string, and sends that text across the network. The application then parses that JSON, validates the schema with a library like Pydantic, catches formatting errors, and extracts a single enum value or boolean flag.</p>
@@ -714,41 +759,41 @@
 <h2 id="the-three-typed-primitives"><a href="#the-three-typed-primitives" class="heading-anchor" aria-hidden="true">#</a>The Three Typed Primitives</h2>
 <p>In standard software engineering, functions return concrete types: a boolean, an enum, or a floating-point number. But when developers build with LLMs, they are forced to discard types, convert everything into conversational English, and parse strings back into types.</p>
 <p>Jev eliminates this conversion layer. It models decisions using three mathematically bounded primitives: <strong><code>noul</code></strong>, <strong><code>choice</code></strong>, and <strong><code>score</code></strong>.</p>
-<div class="table-wrapper"><table>
+<div class="table-wrapper"><table class="booktabs">
 <thead>
 <tr>
-<th style="text-align: left;">Primitive</th>
-<th style="text-align: left;">Mathematical Formulation</th>
-<th style="text-align: left;">Output Contract</th>
-<th style="text-align: left;">Semantic Meaning</th>
-<th style="text-align: left;">Systems Use Case</th>
+<th>Primitive</th>
+<th>Mathematical Formulation</th>
+<th>Output Contract</th>
+<th>Semantic Meaning</th>
+<th>Systems Use Case</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong><code>noul</code></strong></td>
-<td style="text-align: left;">$p = \sigma(W_{\text{noul}} z + b) \in [0, 1]$</td>
-<td style="text-align: left;">Scalar float $p$ + confidence $c$</td>
-<td style="text-align: left;">Epistemic truth of a proposition</td>
-<td style="text-align: left;">Tool execution gating, security guardrails, boolean assertions</td>
+<td><strong><code>noul</code></strong></td>
+<td>$p = \sigma(W_{\text{noul}} z + b) \in [0, 1]$</td>
+<td>Scalar float $p$ + confidence $c$</td>
+<td>Epistemic truth of a proposition</td>
+<td>Tool execution gating, security guardrails, boolean assertions</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong><code>choice</code></strong></td>
-<td style="text-align: left;">$\mathbf{p} = \text{softmax}(W_{\text{choice}} z) \in \Delta^M$</td>
-<td style="text-align: left;">Selected key + full simplex $\mathbf{p} + c$</td>
-<td style="text-align: left;">Distribution over $M$ mutually exclusive options</td>
-<td style="text-align: left;">Request triage, model routing, workflow dispatch</td>
+<td><strong><code>choice</code></strong></td>
+<td>$\mathbf{p} = \text{softmax}(W_{\text{choice}} z) \in \Delta^M$</td>
+<td>Selected key + full simplex $\mathbf{p} + c$</td>
+<td>Distribution over $M$ mutually exclusive options</td>
+<td>Request triage, model routing, workflow dispatch</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong><code>score</code></strong></td>
-<td style="text-align: left;">$\mathbb{E}[S] = \sum_{k=0}^K k \cdot p_k \in [0, K]$</td>
-<td style="text-align: left;">Continuous float $\hat{s}$ + anchor probs $+ c$</td>
-<td style="text-align: left;">Calibrated expected value across an ordered scale</td>
-<td style="text-align: left;">Priority queues, risk evaluation, urgency indexing</td>
+<td><strong><code>score</code></strong></td>
+<td>$\mathbb{E}[S] = \sum_{k=0}^K k \cdot p_k \in [0, K]$</td>
+<td>Continuous float $\hat{s}$ + anchor probs $+ c$</td>
+<td>Calibrated expected value across an ordered scale</td>
+<td>Priority queues, risk evaluation, urgency indexing</td>
 </tr>
 </tbody>
 </table></div>
-<p><em>Table 1: Mathematical formulation, output contracts, and systems applications of Jev's three typed primitives (<code>noul</code>, <code>choice</code>, <code>score</code>).</em></p>
+<div class="table-caption"><em>Table 1: Mathematical formulation, output contracts, and systems applications of Jev's three typed primitives (<code>noul</code>, <code>choice</code>, <code>score</code>).</em></div>
 <hr />
 <h3 id="1-noul-irreducible-truth-verification"><a href="#1-noul-irreducible-truth-verification" class="heading-anchor" aria-hidden="true">#</a>1. Noul: Irreducible Truth Verification</h3>
 <p>The term <strong><code>noul</code></strong> draws inspiration from classical philosophical nomenclature for an irreducible concept or truth atom. </p>
@@ -812,53 +857,53 @@ $$</p>
 <hr />
 <h2 id="autoregressive-decoders-vs-parallel-decision-encoders"><a href="#autoregressive-decoders-vs-parallel-decision-encoders" class="heading-anchor" aria-hidden="true">#</a>Autoregressive Decoders vs. Parallel Decision Encoders</h2>
 <p>To see the operational contrast clearly, let us compare their execution mechanics side by side:</p>
-<div class="table-wrapper"><table>
+<div class="table-wrapper"><table class="booktabs">
 <thead>
 <tr>
-<th style="text-align: left;">Architectural Property</th>
-<th style="text-align: left;">Standard Generative LLM</th>
-<th style="text-align: left;">Jev Decision Engine</th>
+<th>Architectural Property</th>
+<th>Standard Generative LLM</th>
+<th>Jev Decision Engine</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Primary Task</strong></td>
-<td style="text-align: left;">Autoregressive sequence generation</td>
-<td style="text-align: left;">Parallel probabilistic evaluation</td>
+<td><strong>Primary Task</strong></td>
+<td>Autoregressive sequence generation</td>
+<td>Parallel probabilistic evaluation</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Attention Mask</strong></td>
-<td style="text-align: left;">Causal (lower-triangular, tokens only see the past)</td>
-<td style="text-align: left;">Bidirectional (full visibility across entire state)</td>
+<td><strong>Attention Mask</strong></td>
+<td>Causal (lower-triangular, tokens only see the past)</td>
+<td>Bidirectional (full visibility across entire state)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Inference Passes</strong></td>
-<td style="text-align: left;">$T$ sequential forward passes (one per token generated)</td>
-<td style="text-align: left;">$1$ single forward pass for all questions</td>
+<td><strong>Inference Passes</strong></td>
+<td>$T$ sequential forward passes (one per token generated)</td>
+<td>$1$ single forward pass for all questions</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Hardware Bottleneck</strong></td>
-<td style="text-align: left;">Memory-bandwidth bound (reading weights from HBM repeatedly)</td>
-<td style="text-align: left;">Compute-bound dense matrix multiplication</td>
+<td><strong>Hardware Bottleneck</strong></td>
+<td>Memory-bandwidth bound (reading weights from HBM repeatedly)</td>
+<td>Compute-bound dense matrix multiplication</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Output Type</strong></td>
-<td style="text-align: left;">Token strings (unstructured text requiring JSON parsing)</td>
-<td style="text-align: left;">Typed scalars, probability vectors, and confidence values</td>
+<td><strong>Output Type</strong></td>
+<td>Token strings (unstructured text requiring JSON parsing)</td>
+<td>Typed scalars, probability vectors, and confidence values</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Latency Profile</strong></td>
-<td style="text-align: left;">$600\text{ ms} - 3000\text{ ms}$</td>
-<td style="text-align: left;">$70\text{ ms} - 500\text{ ms}$</td>
+<td><strong>Latency Profile</strong></td>
+<td>$600\text{ ms} - 3000\text{ ms}$</td>
+<td>$70\text{ ms} - 500\text{ ms}$</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Failure Modes</strong></td>
-<td style="text-align: left;">Broken JSON, schema hallucinations, missing brackets</td>
-<td style="text-align: left;">Classification error (strictly bounded within schema)</td>
+<td><strong>Failure Modes</strong></td>
+<td>Broken JSON, schema hallucinations, missing brackets</td>
+<td>Classification error (strictly bounded within schema)</td>
 </tr>
 </tbody>
 </table></div>
-<p><em>Table 2: Structural and mechanical comparison between autoregressive generative LLMs and Jev's parallel decision encoder.</em></p>
+<div class="table-caption"><em>Table 2: Structural and mechanical comparison between autoregressive generative LLMs and Jev's parallel decision encoder.</em></div>
 <hr />
 <h2 id="how-jev-is-trained-rlcd-reinforcement-learning-for-calibrated-decisions"><a href="#how-jev-is-trained-rlcd-reinforcement-learning-for-calibrated-decisions" class="heading-anchor" aria-hidden="true">#</a>How Jev is Trained: RLCD (Reinforcement Learning for Calibrated Decisions)</h2>
 <p>Building a fast encoder is only half the battle. If the model's output probabilities are uncalibrated, software logic cannot trust them.</p>
@@ -925,55 +970,55 @@ $$</p>
 <h2 id="the-landscape-jev-drex-and-decision-models"><a href="#the-landscape-jev-drex-and-decision-models" class="heading-anchor" aria-hidden="true">#</a>The Landscape: Jev, Drex, and Decision Models</h2>
 <p>The release of Jev on September 15, 2026 sparked immediate competition in what is now termed the <strong>Decision Model</strong> space.</p>
 <p>Within days, Nace AI announced <strong>Drex</strong>, a sub-6-billion parameter decision model that competes directly with Jev on the public Decision Index benchmark. The benchmark evaluates models on 40 discrete tasks spanning routing, tool-call parameter validation, legal contract interpretation, and financial auditing.</p>
-<div class="table-wrapper"><table>
+<div class="table-wrapper"><table class="booktabs">
 <thead>
 <tr>
-<th style="text-align: left;">Model</th>
-<th style="text-align: left;">Architecture Paradigm</th>
-<th style="text-align: left;">Parameter Scale</th>
-<th style="text-align: left;">Tokens per Decision</th>
-<th style="text-align: left;">Decision Index 0.2 Score</th>
+<th>Model</th>
+<th>Architecture Paradigm</th>
+<th>Parameter Scale</th>
+<th>Tokens per Decision</th>
+<th>Decision Index 0.2 Score</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Drex 1.0</strong></td>
-<td style="text-align: left;">Non-autoregressive decision model</td>
-<td style="text-align: left;">&lt; 6B</td>
-<td style="text-align: left;">70 tokens</td>
-<td style="text-align: left;"><strong>51.73</strong></td>
+<td><strong>Drex 1.0</strong></td>
+<td>Non-autoregressive decision model</td>
+<td>&lt; 6B</td>
+<td>70 tokens</td>
+<td><strong>51.73</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Jev 1.13.0</strong></td>
-<td style="text-align: left;">Non-autoregressive decision model</td>
-<td style="text-align: left;">Proprietary</td>
-<td style="text-align: left;">367 tokens</td>
-<td style="text-align: left;"><strong>51.67</strong></td>
+<td><strong>Jev 1.13.0</strong></td>
+<td>Non-autoregressive decision model</td>
+<td>Proprietary</td>
+<td>367 tokens</td>
+<td><strong>51.67</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>AutoJev-27B</strong></td>
-<td style="text-align: left;">Fine-tuned dense transformer</td>
-<td style="text-align: left;">27.8B</td>
-<td style="text-align: left;">412 tokens</td>
-<td style="text-align: left;"><strong>50.94</strong></td>
+<td><strong>AutoJev-27B</strong></td>
+<td>Fine-tuned dense transformer</td>
+<td>27.8B</td>
+<td>412 tokens</td>
+<td><strong>50.94</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Surogate Rune</strong></td>
-<td style="text-align: left;">MoE hybrid classifier</td>
-<td style="text-align: left;">25.8B</td>
-<td style="text-align: left;">390 tokens</td>
-<td style="text-align: left;"><strong>47.23</strong></td>
+<td><strong>Surogate Rune</strong></td>
+<td>MoE hybrid classifier</td>
+<td>25.8B</td>
+<td>390 tokens</td>
+<td><strong>47.23</strong></td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Decider Chat</strong></td>
-<td style="text-align: left;">Standard autoregressive chat LLM</td>
-<td style="text-align: left;">27.8B</td>
-<td style="text-align: left;">1,850 tokens</td>
-<td style="text-align: left;"><strong>46.08</strong></td>
+<td><strong>Decider Chat</strong></td>
+<td>Standard autoregressive chat LLM</td>
+<td>27.8B</td>
+<td>1,850 tokens</td>
+<td><strong>46.08</strong></td>
 </tr>
 </tbody>
 </table></div>
-<p><em>Table 3: Public Decision Index 0.2 benchmark results across 40 evaluation tasks. Scores are chance-corrected (0.0 represents uniform random guessing). Median latency for non-autoregressive decision models is 50–180ms compared to 1,200ms+ for conversational chat models.</em></p>
+<div class="table-caption"><em>Table 3: Public Decision Index 0.2 benchmark results across 40 evaluation tasks. Scores are chance-corrected (0.0 represents uniform random guessing). Median latency for non-autoregressive decision models is 50–180ms compared to 1,200ms+ for conversational chat models.</em></div>
 <p>The data confirms a distinct shift: specialized non-autoregressive models routinely outperform multi-billion parameter chat models on structured reasoning and tool routing, while consuming a fraction of the token budget and compute energy.</p>
 <hr />
 <h2 id="the-architectural-mandate"><a href="#the-architectural-mandate" class="heading-anchor" aria-hidden="true">#</a>The Architectural Mandate</h2>

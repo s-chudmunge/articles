@@ -2,7 +2,7 @@
 """
 Static site generator for s-chudmunge/articles GitHub Pages.
 Generates an academic-grade, typography-first reading experience inspired by
-Zongyi Li's research blog (al-folio academic jekyll style).
+Zongyi Li's research blog (al-folio academic jekyll style) with LaTeX Booktabs table styling.
 """
 
 import os
@@ -20,10 +20,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} | Sankalp Chudmunge</title>
+<title>{full_meta_title} | Sankalp Chudmunge</title>
 
 <!-- Primary SEO Meta Tags -->
-<meta name="title" content="{title}">
+<meta name="title" content="{full_meta_title}">
 <meta name="description" content="{excerpt}">
 <meta name="author" content="{author}">
 <meta name="keywords" content="{keywords}">
@@ -34,7 +34,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Sankalp Chudmunge">
 <meta property="og:url" content="{canonical_url}">
-<meta property="og:title" content="{title}">
+<meta property="og:title" content="{full_meta_title}">
 <meta property="og:description" content="{excerpt}">
 <meta property="og:image" content="{og_image}">
 <meta property="og:image:width" content="1200">
@@ -48,7 +48,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta name="twitter:site" content="@CompleteSkeptic">
 <meta name="twitter:creator" content="@CompleteSkeptic">
 <meta name="twitter:url" content="{canonical_url}">
-<meta name="twitter:title" content="{title}">
+<meta name="twitter:title" content="{full_meta_title}">
 <meta name="twitter:description" content="{excerpt}">
 <meta name="twitter:image" content="{og_image}">
 
@@ -92,12 +92,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     --code-border: #e1e4e8;
     --quote-bg: #f8f9fb;
     --quote-border: #00369f;
-    --table-header: #f6f8fa;
-    --table-hover: #f9fafb;
     --nav-bg: rgba(255, 255, 255, 0.95);
     --btn-bg: #f3f4f6;
     --btn-text: #24292f;
     --btn-border: #d0d7de;
+    
+    /* Academic Booktabs Table Rules */
+    --table-rule-thick: #24292f;
+    --table-rule-thin: #d0d7de;
+    --table-row-hover: rgba(0, 0, 0, 0.02);
     
     /* Academic Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -120,12 +123,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     --code-border: #30363d;
     --quote-bg: #131922;
     --quote-border: #388bfd;
-    --table-header: #161b22;
-    --table-hover: #1c2129;
     --nav-bg: rgba(13, 17, 23, 0.95);
     --btn-bg: #21262d;
     --btn-text: #c9d1d9;
     --btn-border: #363b42;
+    
+    --table-rule-thick: #c9d1d9;
+    --table-rule-thin: #30363d;
+    --table-row-hover: rgba(255, 255, 255, 0.03);
   }}
 
   /* Font Mode Switcher */
@@ -144,7 +149,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     font-family: var(--font-body);
     background-color: var(--bg-page);
     color: var(--text-main);
-    line-height: 1.75;
+    line-height: 1.78;
     padding: 0 0 5rem 0;
     transition: background-color 0.25s ease, color 0.25s ease;
     text-rendering: optimizeLegibility;
@@ -237,7 +242,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border-color: var(--link-color);
   }}
 
-  /* Content Wrapper: Exact Al-Folio 740px Reading Measure */
+  /* Content Wrapper: 760px Academic Reading Measure */
   .page-content {{
     padding-top: 5.5rem;
   }}
@@ -266,12 +271,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   h1.post-title {{
     font-family: var(--font-sans);
-    font-size: clamp(2.15rem, 4.2vw, 2.75rem);
+    font-size: clamp(2.35rem, 4.5vw, 3rem);
     font-weight: 800;
-    line-height: 1.2;
+    line-height: 1.15;
     letter-spacing: -0.03em;
     color: var(--text-main);
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.6rem;
+  }}
+
+  .post-subtitle {{
+    font-family: var(--font-sans);
+    font-size: 1.3rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--text-muted);
+    margin-bottom: 1.15rem;
   }}
 
   .post-meta {{
@@ -297,7 +311,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   .post-content p {{
-    margin: 1.5rem 0;
+    margin: 1.55rem 0;
   }}
 
   .post-content h2 {{
@@ -464,40 +478,69 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     padding: 0 1rem;
   }}
 
-  /* Academic Tables */
+  /* ====================================================================
+     Academic Booktabs Table Styling (LaTeX / Nature Journal Style)
+     Zero ChatGPT boxiness: no outer box, no vertical rules, crisp rules
+     ==================================================================== */
   .table-wrapper {{
     width: 100%;
     overflow-x: auto;
-    margin: 2.25rem 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-card);
+    margin: 2.75rem 0 0.65rem 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }}
-  table {{
+  table.booktabs {{
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-sans);
-    font-size: 0.925rem;
+    font-size: 0.935rem;
+    line-height: 1.55;
+    border-top: 2.2px solid var(--table-rule-thick);
+    border-bottom: 2.2px solid var(--table-rule-thick);
+    background: transparent;
   }}
-  th, td {{
-    padding: 0.85rem 1.15rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: top;
-  }}
-  th {{
-    background: var(--table-header);
+  table.booktabs th {{
     font-weight: 700;
-    font-size: 0.825rem;
+    font-size: 0.835rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted);
+    color: var(--text-main);
+    padding: 0.85rem 1.15rem;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1.2px solid var(--table-rule-thick);
+    background: transparent;
+    vertical-align: bottom;
+    text-align: left;
   }}
-  tr:last-child td {{
+  table.booktabs td {{
+    padding: 0.85rem 1.15rem;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--table-rule-thin);
+    vertical-align: top;
+    color: var(--text-main);
+    background: transparent;
+    text-align: left;
+  }}
+  table.booktabs tr:last-child td {{
     border-bottom: none;
   }}
-  tr:hover td {{
-    background: var(--table-hover);
+  table.booktabs tr:hover td {{
+    background-color: var(--table-row-hover);
+  }}
+  .table-caption {{
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 0.65rem;
+    margin-bottom: 2.75rem;
+    line-height: 1.55;
+    text-align: left;
   }}
 
   /* Embedded Loom Video */
@@ -582,9 +625,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .header-wrapper {{ padding: 0 15px; }}
     .site-nav {{ gap: 0.75rem; }}
     .post-wrapper {{ padding: 0 16px; }}
-    h1.post-title {{ font-size: 1.85rem; }}
+    h1.post-title {{ font-size: 2rem; }}
+    .post-subtitle {{ font-size: 1.15rem; }}
     .post-content {{ font-size: 1.05rem; }}
-    th, td {{ padding: 0.65rem 0.75rem; font-size: 0.85rem; }}
+    table.booktabs th, table.booktabs td {{ padding: 0.65rem 0.75rem; font-size: 0.85rem; }}
   }}
 </style>
 </head>
@@ -617,6 +661,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <header class="post-header">
         <span class="post-category">{subject}</span>
         <h1 class="post-title">{title}</h1>
+        {subtitle_html}
         <p class="post-meta">
           <span>{date}</span>
           <span class="separator">•</span>
@@ -844,8 +889,7 @@ def extract_headings_and_add_ids(html_text):
 
     return re.sub(r'<h([23])>(.*?)</h\1>', repl, html_text, flags=re.DOTALL)
 
-def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
-    title = frontmatter.get('title', 'Article')
+def build_schema_json(frontmatter, canonical_url, og_image, excerpt, full_meta_title):
     author = frontmatter.get('author', 'Sankalp Chudmunge')
     date_str = frontmatter.get('date', 'September 25, 2026')
     try:
@@ -870,7 +914,7 @@ def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
                     "name": "Sankalp Chudmunge Articles",
                     "url": f"{SITE_URL}/"
                 },
-                "headline": title,
+                "headline": full_meta_title,
                 "description": excerpt,
                 "image": og_image,
                 "datePublished": f"{iso_date}T00:00:00Z",
@@ -909,7 +953,7 @@ def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
                     {
                         "@type": "ListItem",
                         "position": 3,
-                        "name": title
+                        "name": frontmatter.get('title', 'Article')
                     }
                 ]
             }
@@ -918,8 +962,9 @@ def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
     return json.dumps(schema, indent=2)
 
 def build_article_html(frontmatter, body_html, raw_body):
-    title = frontmatter.get('title', 'Untitled Article')
-    slug = frontmatter.get('slug', 'article')
+    title = frontmatter.get('title', 'What is Jev?')
+    subtitle = frontmatter.get('subtitle', '')
+    slug = frontmatter.get('slug', 'what-is-jev')
     author = frontmatter.get('author', 'Sankalp Chudmunge')
     date = frontmatter.get('date', '')
     subject = frontmatter.get('subject', 'Machine Learning')
@@ -931,6 +976,8 @@ def build_article_html(frontmatter, body_html, raw_body):
     canonical_url = f"{SITE_URL}/{slug}/"
     og_image = f"{SITE_URL}{hero_image}" if hero_image.startswith('/') else f"{SITE_URL}/{hero_image}"
 
+    full_meta_title = f"{title}: {subtitle}" if subtitle else title
+
     synonyms = frontmatter.get('synonyms', [])
     keywords = ", ".join([title, subject, author] + synonyms)
 
@@ -940,13 +987,16 @@ def build_article_html(frontmatter, body_html, raw_body):
     except Exception:
         published_iso = "2026-09-25T00:00:00Z"
 
+    # Subtitle HTML
+    subtitle_html = f'<p class="post-subtitle">{subtitle}</p>' if subtitle else ''
+
     # Convert root-relative image paths to relative paths
     rel_hero = hero_image.lstrip('/')
     hero_section = ""
     if hero_image:
         hero_section = f'<div class="img_row"><img src="../{rel_hero}" alt="{title}"></div>'
 
-    # Academic blockquote style for technical insight
+    # Academic blockquote style for overview/insight
     insight_section = ""
     if technical_insight or excerpt:
         lead_text = technical_insight if technical_insight else excerpt
@@ -963,9 +1013,8 @@ def build_article_html(frontmatter, body_html, raw_body):
         caption_text = m.group(2)
         return f'<div class="img_row">{img_tag}</div>\n<div class="caption">{caption_text}</div>'
 
-    # Match image paragraph followed by caption: <p><img ... /></p>\n<p><em>Figure ...</em></p>
     body_html = re.sub(
-        r'<p>(<img\s+[^>]+>)</p>\s*<p>(<em>(?:Figure|Table)\s+\d+:.*?</em>)</p>',
+        r'<p>(<img\s+[^>]+>)</p>\s*<p>(<em>(?:Figure)\s+\d+:.*?</em>)</p>',
         figure_repl,
         body_html
     )
@@ -976,13 +1025,26 @@ def build_article_html(frontmatter, body_html, raw_body):
     # Add IDs to headings
     body_html = extract_headings_and_add_ids(body_html)
 
-    # Wrap tables in responsive wrapper
-    body_html = re.sub(r'(<table>.*?</table>)', r'<div class="table-wrapper">\1</div>', body_html, flags=re.DOTALL)
+    # Wrap tables in academic Booktabs structure (LaTeX / Nature journal style)
+    # Remove all default markdown table styles, strip inline styles, add class="booktabs"
+    def table_repl(m):
+        tbl = m.group(1)
+        # remove inline style="text-align: left;" from th and td
+        tbl_clean = re.sub(r'\s*style="text-align:\s*[a-zA-Z]+;?"', '', tbl)
+        tbl_booktabs = tbl_clean.replace('<table>', '<table class="booktabs">')
+        return f'<div class="table-wrapper">{tbl_booktabs}</div>'
 
-    schema_json = build_schema_json(frontmatter, canonical_url, og_image, excerpt)
+    body_html = re.sub(r'(<table>.*?</table>)', table_repl, body_html, flags=re.DOTALL)
+
+    # Convert Table captions <p><em>Table 1: ...</em></p> into .table-caption
+    body_html = re.sub(r'<p>(<em>(?:Table\s+\d+:.*?)</em>)</p>', r'<div class="table-caption">\1</div>', body_html)
+
+    schema_json = build_schema_json(frontmatter, canonical_url, og_image, excerpt, full_meta_title)
 
     return HTML_TEMPLATE.format(
         title=title,
+        full_meta_title=full_meta_title,
+        subtitle_html=subtitle_html,
         slug=slug,
         author=author,
         date=date,
