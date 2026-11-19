@@ -20,7 +20,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{full_meta_title} | Sankalp Chudmunge</title>
+<title>{title} | Sankalp Chudmunge</title>
 
 <!-- Primary SEO Meta Tags -->
 <meta name="title" content="{full_meta_title}">
@@ -998,7 +998,13 @@ def build_article_html(frontmatter, body_html, raw_body):
     canonical_url = f"{SITE_URL}/{slug}/"
     og_image = f"{SITE_URL}{hero_image}" if hero_image.startswith('/') else f"{SITE_URL}/{hero_image}"
 
-    full_meta_title = f"{title}: {subtitle}" if subtitle else title
+    if subtitle:
+        if title.endswith('?') or title.endswith('!'):
+            full_meta_title = f"{title} {subtitle}"
+        else:
+            full_meta_title = f"{title}: {subtitle}"
+    else:
+        full_meta_title = title
 
     synonyms = frontmatter.get('synonyms', [])
     keywords = ", ".join([title, subject, author] + synonyms)
