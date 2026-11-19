@@ -984,7 +984,7 @@ def build_schema_json(frontmatter, canonical_url, og_image, excerpt, full_meta_t
     return json.dumps(schema, indent=2)
 
 def build_article_html(frontmatter, body_html, raw_body):
-    title = frontmatter.get('title', 'What is Jev?')
+    title = frontmatter.get('title', 'What are Decision Models?')
     subtitle = frontmatter.get('subtitle', '')
     slug = frontmatter.get('slug', 'what-is-jev')
     author = frontmatter.get('author', 'Sankalp Chudmunge')

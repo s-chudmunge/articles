@@ -10,7 +10,7 @@ Personal research essays and engineering breakdowns published directly to GitHub
 
 | Article | Category | Slug | Status |
 | :--- | :--- | :--- | :--- |
-| **What is Jev? The System One Model and Architecture Blueprint** | Machine Learning | [`/what-is-jev-system-one-architecture`](https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/) | ✅ Published |
+| **What are Decision Models? The System One Architecture Blueprint** | Machine Learning | [`/decision-models`](https://s-chudmunge.github.io/articles/decision-models/) | ✅ Published |
 
 ---
 
