@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Static site generator for s-chudmunge/articles GitHub Pages.
-Converts markdown articles into standalone, elegant HTML pages matching the
-design system of fep-papers-archive and setr-papers-archive.
+Generates search-engine optimized, typography-first, magazine-grade HTML articles
+matching the design philosophy of fep-papers-archive and setr-papers-archive.
 """
 
 import os
@@ -10,8 +10,10 @@ import re
 import sys
 import yaml
 import markdown
+from datetime import datetime
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+SITE_URL = "https://s-chudmunge.github.io/articles"
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -24,20 +26,42 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta name="title" content="{title}">
 <meta name="description" content="{excerpt}">
 <meta name="author" content="{author}">
+<meta name="keywords" content="{keywords}">
+<link rel="canonical" href="{canonical_url}">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://s-chudmunge.github.io/articles/{slug}/">
+<meta property="og:site_name" content="Sankalp Chudmunge — Research & Articles">
+<meta property="og:url" content="{canonical_url}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{excerpt}">
-<meta property="og:image" content="{hero_image}">
+<meta property="og:image" content="{og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="{published_iso}">
+<meta property="article:modified_time" content="{published_iso}">
+<meta property="article:author" content="https://github.com/s-chudmunge">
+<meta property="article:section" content="{subject}">
 
-<!-- Twitter -->
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="https://s-chudmunge.github.io/articles/{slug}/">
-<meta property="twitter:title" content="{title}">
-<meta property="twitter:description" content="{excerpt}">
-<meta property="twitter:image" content="{hero_image}">
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@CompleteSkeptic">
+<meta name="twitter:creator" content="@CompleteSkeptic">
+<meta name="twitter:url" content="{canonical_url}">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{excerpt}">
+<meta name="twitter:image" content="{og_image}">
+
+<!-- Schema.org JSON-LD Structured Data for Search Engine Rich Snippets -->
+<script type="application/ld+json">
+{schema_json}
+</script>
+
+<!-- Google Fonts: Newsreader (Editorial Serif), Plus Jakarta Sans (Modern Geometric Sans), JetBrains Mono (Code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 
 <!-- KaTeX for Fast & Pristine LaTeX Math Rendering -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -51,134 +75,195 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       throwOnError: false
     }});"></script>
 
-<!-- Prism.js for Syntax Highlighting -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-
 <!-- Twitter Widget for Embedded Tweets -->
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 <style>
   :root {{
-    --bg-page: #f8fafc;
+    /* Eye-Comfort Warm Paper Palette (Light Mode) */
+    --bg-page: #fdfcfb;
     --bg-card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --btn-bg: #f1f5f9;
-    --btn-text: #334155;
-    --btn-border: #cbd5e1;
-    --link-color: #2563eb;
-    --link-hover: #1d4ed8;
-    --code-bg: #f1f5f9;
-    --code-border: #e2e8f0;
-    --callout-bg: #f0f9ff;
-    --callout-border: #0284c7;
+    --text-main: #181a1f;
+    --text-muted: #57606a;
+    --border-color: #e5e7eb;
+    --border-subtle: #f0f2f5;
+    --btn-bg: #f3f4f6;
+    --btn-text: #374151;
+    --btn-border: #d1d5db;
+    --link-color: #1d4ed8;
+    --link-hover: #1e40af;
+    --code-bg: #f6f8fa;
+    --code-border: #e1e4e8;
+    --callout-bg: #f0f7ff;
+    --callout-border: #2563eb;
+    --callout-text: #1e3a8a;
     --table-header: #f8fafc;
-    --table-row-hover: #f1f5f9;
+    --table-row-hover: #f8fafc;
     --tag-bg: #eff6ff;
     --tag-text: #1d4ed8;
     --tag-border: #bfdbfe;
+    --accent-glow: rgba(37, 99, 235, 0.08);
+
+    /* Typography font variable */
+    --font-prose: 'Newsreader', Georgia, Cambria, serif;
+    --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-ui: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
   }}
 
   [data-theme="dark"] {{
-    --bg-page: #0b0f19;
-    --bg-card: #151d30;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-color: #263352;
-    --btn-bg: #1e293b;
-    --btn-text: #cbd5e1;
-    --btn-border: #334155;
-    --link-color: #60a5fa;
-    --link-hover: #93c5fd;
-    --code-bg: #0d1424;
-    --code-border: #1e293b;
+    /* Deep Slate / Zinc OLED-friendly Dark Palette */
+    --bg-page: #0d1117;
+    --bg-card: #161b22;
+    --text-main: #e6edf3;
+    --text-muted: #8b949e;
+    --border-color: #30363d;
+    --border-subtle: #21262d;
+    --btn-bg: #21262d;
+    --btn-text: #c9d1d9;
+    --btn-border: #363b42;
+    --link-color: #58a6ff;
+    --link-hover: #79b8ff;
+    --code-bg: #161b22;
+    --code-border: #30363d;
     --callout-bg: rgba(56, 189, 248, 0.08);
     --callout-border: #38bdf8;
-    --table-header: #101728;
-    --table-row-hover: #192338;
-    --tag-bg: rgba(59, 130, 246, 0.12);
-    --tag-text: #93c5fd;
-    --tag-border: rgba(59, 130, 246, 0.3);
+    --callout-text: #bae6fd;
+    --table-header: #131820;
+    --table-row-hover: #1c2129;
+    --tag-bg: rgba(56, 189, 248, 0.12);
+    --tag-text: #7dd3fc;
+    --tag-border: rgba(56, 189, 248, 0.28);
+    --accent-glow: rgba(56, 189, 248, 0.1);
+  }}
+
+  /* Font Switcher Preference */
+  [data-font="sans"] {{
+    --font-prose: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }}
 
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   
+  html {{
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }}
+
   body {{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-prose);
     background-color: var(--bg-page);
     color: var(--text-main);
-    line-height: 1.8;
-    padding: 0 1.25rem 5rem 1.25rem;
+    line-height: 1.82;
+    padding: 0 1.25rem 6rem 1.25rem;
     transition: background-color 0.25s ease, color 0.25s ease;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }}
 
-  /* Top Navigation */
+  /* Top Navigation Bar */
+  .top-nav-wrapper {{
+    position: sticky;
+    top: 0;
+    background: var(--bg-page);
+    background: color-mix(in srgb, var(--bg-page) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 90;
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 -1.25rem 2.5rem -1.25rem;
+    padding: 0 1.25rem;
+  }}
+
   .top-nav {{
-    max-width: 860px;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 1.75rem 0 1.25rem 0;
+    padding: 0.95rem 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
   }}
 
   .nav-brand {{
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.95rem;
+    gap: 0.45rem;
+    font-family: var(--font-ui);
+    font-size: 0.925rem;
     font-weight: 600;
     color: var(--text-muted);
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 0.15s;
   }}
   .nav-brand:hover {{ color: var(--link-color); }}
   .nav-brand span.author-name {{ color: var(--text-main); font-weight: 700; }}
 
-  .theme-toggle {{
+  .nav-controls {{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }}
+
+  .pill-control {{
     background: var(--btn-bg);
     border: 1px solid var(--btn-border);
     color: var(--btn-text);
-    padding: 0.45rem 0.9rem;
+    padding: 0.35rem 0.75rem;
     border-radius: 9999px;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s;
+    gap: 0.35rem;
+    transition: all 0.15s;
   }}
-  .theme-toggle:hover {{ opacity: 0.85; border-color: var(--link-color); }}
+  .pill-control:hover {{
+    opacity: 0.9;
+    border-color: var(--link-color);
+  }}
 
-  /* Reading Progress */
+  /* Reading Progress Bar */
   #progress-bar {{
     position: fixed;
     top: 0;
     left: 0;
     height: 3px;
-    background: var(--link-color);
+    background: linear-gradient(90deg, var(--link-color), #8b5cf6);
     width: 0%;
     z-index: 100;
-    transition: width 0.1s ease-out;
+    transition: width 0.08s ease-out;
   }}
 
-  /* Article Wrapper */
-  .article-container {{
-    max-width: 860px;
-    margin: 2.5rem auto 0 auto;
+  /* Page Layout Grid with Sticky TOC on Desktop */
+  .layout-grid {{
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 740px) 260px;
+    gap: 4.5rem;
+    align-items: start;
+    justify-content: center;
   }}
 
-  /* Article Header */
+  @media (max-width: 1080px) {{
+    .layout-grid {{
+      grid-template-columns: minmax(0, 740px);
+      gap: 0;
+    }}
+    .toc-sidebar {{
+      display: none !important;
+    }}
+  }}
+
+  /* Main Article Column */
+  .article-main {{
+    width: 100%;
+    max-width: 740px;
+  }}
+
+  /* Header Section */
   .article-header {{
     margin-bottom: 2rem;
   }}
@@ -190,18 +275,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border: 1px solid var(--tag-border);
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
+    font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     margin-bottom: 1.25rem;
   }}
 
   h1.article-title {{
-    font-size: clamp(2.1rem, 4.2vw, 2.85rem);
+    font-family: var(--font-heading);
+    font-size: clamp(2.25rem, 4.4vw, 2.95rem);
     font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.025em;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
     color: var(--text-main);
     margin-bottom: 1.25rem;
   }}
@@ -212,7 +299,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     align-items: center;
     gap: 1.25rem;
     color: var(--text-muted);
-    font-size: 0.925rem;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
     padding-bottom: 1.75rem;
     border-bottom: 1px solid var(--border-color);
   }}
@@ -220,12 +308,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   /* Hero Image */
   .hero-image-wrapper {{
-    margin: 2.5rem 0;
+    margin: 2.25rem 0;
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     background: var(--bg-card);
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.08);
   }}
   .hero-image-wrapper img {{
     width: 100%;
@@ -238,59 +326,83 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     background: var(--callout-bg);
     border-left: 4px solid var(--callout-border);
     border-radius: 0 10px 10px 0;
-    padding: 1.4rem 1.75rem;
-    margin: 2.25rem 0;
+    padding: 1.45rem 1.85rem;
+    margin: 2.5rem 0;
+    box-shadow: 0 2px 10px -2px var(--accent-glow);
   }}
   .insight-title {{
+    font-family: var(--font-ui);
     font-size: 0.825rem;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     color: var(--callout-border);
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
   }}
   .insight-text {{
-    font-size: 1.025rem;
-    line-height: 1.65;
+    font-size: 1.05rem;
+    line-height: 1.7;
     color: var(--text-main);
   }}
 
   /* Article Content Typography */
   .article-content {{
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     color: var(--text-main);
   }}
 
   .article-content p {{
-    margin: 1.5rem 0;
+    margin: 1.65rem 0;
   }}
 
   .article-content h2 {{
-    font-size: 1.85rem;
+    font-family: var(--font-heading);
+    font-size: 1.95rem;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 3.5rem 0 1.25rem 0;
-    padding-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+    margin: 3.75rem 0 1.25rem 0;
+    padding-bottom: 0.65rem;
     border-bottom: 1px solid var(--border-color);
-    line-height: 1.3;
+    line-height: 1.28;
+    position: relative;
   }}
 
   .article-content h3 {{
-    font-size: 1.35rem;
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
     font-weight: 700;
     letter-spacing: -0.015em;
-    margin: 2.4rem 0 0.85rem 0;
+    margin: 2.75rem 0 0.85rem 0;
     line-height: 1.35;
+    position: relative;
+  }}
+
+  .heading-anchor {{
+    position: absolute;
+    left: -1.4rem;
+    top: 0;
+    color: var(--text-muted);
+    text-decoration: none;
+    opacity: 0;
+    font-weight: 400;
+    transition: opacity 0.15s, color 0.15s;
+  }}
+  h2:hover .heading-anchor, h3:hover .heading-anchor {{
+    opacity: 0.65;
+  }}
+  .heading-anchor:hover {{
+    opacity: 1 !important;
+    color: var(--link-color);
   }}
 
   .article-content ul, .article-content ol {{
-    margin: 1.25rem 0 1.25rem 1.75rem;
+    margin: 1.4rem 0 1.4rem 1.85rem;
   }}
   .article-content li {{
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.6rem;
   }}
 
   .article-content a {{
@@ -310,22 +422,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .article-content hr {{
     border: none;
     border-top: 1px solid var(--border-color);
-    margin: 3.5rem 0;
+    margin: 3.75rem 0;
   }}
 
   .article-content blockquote {{
     border-left: 3px solid var(--callout-border);
     background: var(--callout-bg);
-    padding: 0.85rem 1.25rem;
-    margin: 1.85rem 0;
+    padding: 0.95rem 1.4rem;
+    margin: 2rem 0;
     border-radius: 0 8px 8px 0;
     color: var(--text-main);
+    font-style: normal;
   }}
 
   /* Inline Code */
   .article-content :not(pre) > code {{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.88em;
+    font-family: var(--font-mono);
+    font-size: 0.86em;
     background: var(--code-bg);
     border: 1px solid var(--code-border);
     padding: 0.15rem 0.4rem;
@@ -333,47 +446,48 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     color: var(--text-main);
   }}
 
-  /* Code Block Container with Copy Button */
+  /* Code Block Container with Language Badge & Copy Button */
   .code-block-wrapper {{
     position: relative;
-    margin: 1.75rem 0;
+    margin: 2rem 0;
   }}
   .code-copy-btn {{
     position: absolute;
-    top: 0.65rem;
-    right: 0.65rem;
-    background: rgba(255, 255, 255, 0.1);
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.12);
     color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 0.25rem 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.25rem 0.65rem;
     border-radius: 5px;
     font-size: 0.75rem;
-    font-family: ui-monospace, monospace;
+    font-family: var(--font-ui);
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s;
     z-index: 10;
   }}
   .code-copy-btn:hover {{
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.22);
     color: #ffffff;
   }}
 
   .article-content pre {{
-    background: #111827 !important;
-    border: 1px solid var(--code-border);
-    border-radius: 8px;
-    padding: 1.25rem !important;
+    background: #0f141c !important;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.35rem !important;
     overflow-x: auto;
-    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px -3px rgba(0, 0, 0, 0.12);
   }}
   .article-content pre code {{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
+    font-family: var(--font-mono);
+    font-size: 0.925rem;
+    line-height: 1.65;
     background: none !important;
     border: none !important;
     padding: 0 !important;
-    color: #f8fafc;
+    color: #f1f5f9;
   }}
 
   /* Content Images */
@@ -383,48 +497,53 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border-radius: 10px;
     border: 1px solid var(--border-color);
     display: block;
-    margin: 2.25rem auto 0.75rem auto;
-    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.06);
+    margin: 2.5rem auto 0.85rem auto;
+    box-shadow: 0 6px 25px -4px rgba(0, 0, 0, 0.08);
   }}
   
-  .article-content p > em:only-child,
   .figure-caption {{
     display: block;
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-    margin-bottom: 2rem;
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    margin-top: 0.65rem;
+    margin-bottom: 2.25rem;
     font-style: italic;
-    line-height: 1.5;
+    line-height: 1.55;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
   }}
 
   /* Tables */
   .table-wrapper {{
     width: 100%;
     overflow-x: auto;
-    margin: 2.25rem 0;
+    margin: 2.5rem 0;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+    background: var(--bg-card);
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.04);
   }}
   table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem;
-    background: var(--bg-card);
+    font-family: var(--font-ui);
+    font-size: 0.925rem;
   }}
   th, td {{
-    padding: 0.9rem 1.15rem;
+    padding: 0.95rem 1.25rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
   }}
   th {{
     background: var(--table-header);
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     color: var(--text-muted);
   }}
   tr:last-child td {{
@@ -442,9 +561,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     overflow: hidden;
     border-radius: 10px;
     border: 1px solid var(--border-color);
-    margin: 2.5rem 0;
+    margin: 2.75rem 0;
     background: var(--bg-card);
-    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 6px 20px -3px rgba(0, 0, 0, 0.08);
   }}
   .loom-container iframe {{
     position: absolute;
@@ -457,21 +576,69 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   /* Embedded Tweet */
   .tweet-container {{
-    margin: 2.5rem 0;
+    margin: 2.75rem 0;
     display: flex;
     justify-content: center;
   }}
 
+  /* Sticky Table of Contents (TOC) Sidebar on Desktop */
+  .toc-sidebar {{
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--border-color);
+    font-family: var(--font-ui);
+  }}
+  .toc-title {{
+    font-size: 0.775rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.95rem;
+  }}
+  .toc-list {{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }}
+  .toc-item {{
+    margin-bottom: 0.55rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }}
+  .toc-item.h3 {{
+    padding-left: 0.85rem;
+    font-size: 0.8rem;
+  }}
+  .toc-link {{
+    color: var(--text-muted);
+    text-decoration: none;
+    display: block;
+    transition: color 0.15s, transform 0.15s;
+  }}
+  .toc-link:hover {{
+    color: var(--link-color);
+    transform: translateX(2px);
+  }}
+  .toc-link.active {{
+    color: var(--link-color);
+    font-weight: 700;
+  }}
+
   /* Article Footer */
   .article-footer {{
-    margin-top: 4.5rem;
-    padding-top: 2rem;
+    margin-top: 5rem;
+    padding-top: 2.25rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 1.5rem;
+    font-family: var(--font-ui);
     font-size: 0.925rem;
     color: var(--text-muted);
   }}
@@ -481,7 +648,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   .article-footer a:hover {{ text-decoration: underline; }}
 
-  /* Back to Top */
+  /* Back to Top Floating Button */
   .back-to-top {{
     position: fixed;
     bottom: 2rem;
@@ -498,24 +665,26 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
+    transition: opacity 0.25s, transform 0.25s, border-color 0.2s;
     font-size: 1.25rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 80;
   }}
   .back-to-top.visible {{
     opacity: 1;
     pointer-events: auto;
   }}
   .back-to-top:hover {{
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     border-color: var(--link-color);
   }}
 
   @media (max-width: 640px) {{
-    body {{ padding: 0 1rem 3rem 1rem; }}
-    h1.article-title {{ font-size: 1.85rem; }}
+    body {{ padding: 0 1rem 3.5rem 1rem; }}
+    h1.article-title {{ font-size: 1.95rem; }}
     .article-meta {{ gap: 0.75rem; font-size: 0.85rem; }}
-    th, td {{ padding: 0.65rem 0.75rem; font-size: 0.85rem; }}
+    th, td {{ padding: 0.75rem 0.85rem; font-size: 0.85rem; }}
+    .insight-box {{ padding: 1.15rem 1.35rem; }}
   }}
 </style>
 </head>
@@ -523,64 +692,98 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <div id="progress-bar"></div>
 
-<header class="top-nav">
-  <a href="../" class="nav-brand">
-    ← <span class="author-name">Sankalp Chudmunge</span> / articles
-  </a>
-  <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
-    <span id="themeIcon">🌙</span>
-    <span id="themeText">Dark Mode</span>
-  </button>
-</header>
-
-<main class="article-container">
-  <article>
-    <header class="article-header">
-      <span class="badge-subject">{subject}</span>
-      <h1 class="article-title">{title}</h1>
-      <div class="article-meta">
-        <span>✍️ <strong>{author}</strong></span>
-        <span>📅 {date}</span>
-        <span>⏱️ {read_time} min read</span>
-      </div>
-    </header>
-
-    {hero_section}
-
-    {insight_section}
-
-    <div class="article-content">
-      {body_html}
+<div class="top-nav-wrapper">
+  <header class="top-nav">
+    <a href="../" class="nav-brand">
+      ← <span class="author-name">Sankalp Chudmunge</span> / articles
+    </a>
+    <div class="nav-controls">
+      <button id="fontToggle" class="pill-control" aria-label="Toggle serif / sans font">
+        <span id="fontIcon">🔤</span>
+        <span id="fontText">Sans</span>
+      </button>
+      <button id="themeToggle" class="pill-control" aria-label="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
     </div>
+  </header>
+</div>
 
-    <footer class="article-footer">
-      <div>
-        Published by <strong>{author}</strong> • GitHub Pages
+<div class="layout-grid">
+  <main class="article-main">
+    <article>
+      <header class="article-header">
+        <span class="badge-subject">{subject}</span>
+        <h1 class="article-title">{title}</h1>
+        <div class="article-meta">
+          <span>✍️ <strong>{author}</strong></span>
+          <span>📅 {date}</span>
+          <span>⏱️ {read_time} min read</span>
+        </div>
+      </header>
+
+      {hero_section}
+
+      {insight_section}
+
+      <div class="article-content">
+        {body_html}
       </div>
-      <div>
-        <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub Repository</a>
-      </div>
-    </footer>
-  </article>
-</main>
+
+      <footer class="article-footer">
+        <div>
+          Published by <strong>{author}</strong> • GitHub Pages
+        </div>
+        <div>
+          <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub Repository</a>
+        </div>
+      </footer>
+    </article>
+  </main>
+
+  <!-- Sticky Sidebar Table of Contents -->
+  <aside class="toc-sidebar">
+    <div class="toc-title">On this page</div>
+    <ul class="toc-list">
+      {toc_html}
+    </ul>
+  </aside>
+</div>
 
 <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
 
 <script>
-  // Reading Progress Bar
+  // Reading Progress Bar & Back-to-Top
   window.addEventListener('scroll', () => {{
     const winScroll = document.documentElement.scrollTop;
     const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     const scrolled = (winScroll / height) * 100;
     document.getElementById('progress-bar').style.width = scrolled + '%';
 
-    // Back to top toggle
     const btt = document.getElementById('backToTop');
-    if (winScroll > 400) {{
+    if (winScroll > 450) {{
       btt.classList.add('visible');
     }} else {{
       btt.classList.remove('visible');
     }}
+
+    // Scroll spy for Table of Contents
+    const headings = document.querySelectorAll('.article-content h2, .article-content h3');
+    let currentId = '';
+    headings.forEach(h => {{
+      const rect = h.getBoundingClientRect();
+      if (rect.top <= 120) {{
+        currentId = h.id;
+      }}
+    }});
+    document.querySelectorAll('.toc-link').forEach(link => {{
+      if (link.getAttribute('href') === '#' + currentId) {{
+        link.classList.add('active');
+      }} else {{
+        link.classList.remove('active');
+      }}
+    }});
   }});
 
   document.getElementById('backToTop').addEventListener('click', () => {{
@@ -598,11 +801,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     if (saved === 'dark' || (!saved && prefersDark)) {{
       document.documentElement.setAttribute('data-theme', 'dark');
       themeIcon.textContent = '☀️';
-      themeText.textContent = 'Light Mode';
+      themeText.textContent = 'Light';
     }} else {{
       document.documentElement.removeAttribute('data-theme');
       themeIcon.textContent = '🌙';
-      themeText.textContent = 'Dark Mode';
+      themeText.textContent = 'Dark';
     }}
   }}
   initTheme();
@@ -613,16 +816,50 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       document.documentElement.removeAttribute('data-theme');
       localStorage.setItem('articles_theme', 'light');
       themeIcon.textContent = '🌙';
-      themeText.textContent = 'Dark Mode';
+      themeText.textContent = 'Dark';
     }} else {{
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('articles_theme', 'dark');
       themeIcon.textContent = '☀️';
-      themeText.textContent = 'Light Mode';
+      themeText.textContent = 'Light';
     }}
   }});
 
-  // Code Copy Buttons
+  // Font Switcher (Serif vs Sans)
+  const fontToggle = document.getElementById('fontToggle');
+  const fontIcon = document.getElementById('fontIcon');
+  const fontText = document.getElementById('fontText');
+
+  function initFont() {{
+    const savedFont = localStorage.getItem('articles_font');
+    if (savedFont === 'sans') {{
+      document.documentElement.setAttribute('data-font', 'sans');
+      fontIcon.textContent = '📖';
+      fontText.textContent = 'Serif';
+    }} else {{
+      document.documentElement.removeAttribute('data-font');
+      fontIcon.textContent = '🔤';
+      fontText.textContent = 'Sans';
+    }}
+  }}
+  initFont();
+
+  fontToggle.addEventListener('click', () => {{
+    const isSans = document.documentElement.getAttribute('data-font') === 'sans';
+    if (isSans) {{
+      document.documentElement.removeAttribute('data-font');
+      localStorage.setItem('articles_font', 'serif');
+      fontIcon.textContent = '🔤';
+      fontText.textContent = 'Sans';
+    }} else {{
+      document.documentElement.setAttribute('data-font', 'sans');
+      localStorage.setItem('articles_font', 'sans');
+      fontIcon.textContent = '📖';
+      fontText.textContent = 'Serif';
+    }}
+  }});
+
+  // Code Block Copy Buttons
   document.querySelectorAll('pre').forEach(pre => {{
     const wrapper = document.createElement('div');
     wrapper.className = 'code-block-wrapper';
@@ -648,7 +885,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.querySelectorAll('img').forEach(img => {{
       const src = img.getAttribute('src');
       if (src && src.startsWith('/images/')) {{
-        // Try relative to parent first
         img.src = '../' + src.replace(/^\\//, '');
         img.onerror = function() {{
           this.onerror = null;
@@ -698,10 +934,6 @@ def process_custom_blocks(md_text):
     return md_text
 
 def protect_latex(md_text):
-    """
-    Protects display math $$...$$ and inline math $...$ from being mangled
-    by python-markdown (e.g. turning underscores _ into <em>).
-    """
     placeholders = []
 
     def save_math(m):
@@ -709,7 +941,6 @@ def protect_latex(md_text):
         placeholders.append(m.group(0))
         return f"KATEXMATHPLACEHOLDER{idx}ENDMATH"
 
-    # Match $$...$$ or $...$ (not across empty lines)
     pattern = re.compile(r'(\$\$.*?\$\$|\$[^\$\n]+?\$)', re.DOTALL)
     protected_text = pattern.sub(save_math, md_text)
 
@@ -719,6 +950,99 @@ def restore_latex(html_text, placeholders):
     for idx, original in enumerate(placeholders):
         html_text = html_text.replace(f"KATEXMATHPLACEHOLDER{idx}ENDMATH", original)
     return html_text
+
+def extract_headings_and_add_ids(html_text):
+    headings = []
+    used_slugs = set()
+
+    def repl(m):
+        level = m.group(1)
+        text = m.group(2)
+        clean_text = re.sub(r'<.*?>', '', text)
+        slug = re.sub(r'[^a-zA-Z0-9]+', '-', clean_text.lower()).strip('-')
+        if not slug:
+            slug = f"section-{len(headings)}"
+        if slug in used_slugs:
+            slug = f"{slug}-{len(headings)}"
+        used_slugs.add(slug)
+        headings.append({'level': int(level), 'title': clean_text, 'id': slug})
+        return f'<h{level} id="{slug}"><a href="#{slug}" class="heading-anchor" aria-hidden="true">#</a>{text}</h{level}>'
+
+    html_with_ids = re.sub(r'<h([23])>(.*?)</h\1>', repl, html_text, flags=re.DOTALL)
+    return html_with_ids, headings
+
+def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
+    title = frontmatter.get('title', 'Article')
+    author = frontmatter.get('author', 'Sankalp Chudmunge')
+    date_str = frontmatter.get('date', 'September 25, 2026')
+    try:
+        dt = datetime.strptime(date_str, "%B %d, %Y")
+        iso_date = dt.strftime("%Y-%m-%d")
+    except Exception:
+        iso_date = "2026-09-25"
+
+    synonyms = frontmatter.get('synonyms', [])
+    keywords_list = ["Machine Learning", "Artificial Intelligence"] + synonyms
+
+    import json
+    schema = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "TechArticle",
+                "@id": f"{canonical_url}#article",
+                "isPartOf": {
+                    "@type": "WebSite",
+                    "@id": f"{SITE_URL}/#website",
+                    "name": "Sankalp Chudmunge Articles",
+                    "url": f"{SITE_URL}/"
+                },
+                "headline": title,
+                "description": excerpt,
+                "image": og_image,
+                "datePublished": f"{iso_date}T00:00:00Z",
+                "dateModified": f"{iso_date}T00:00:00Z",
+                "inLanguage": "en-US",
+                "mainEntityOfPage": canonical_url,
+                "author": {
+                    "@type": "Person",
+                    "name": author,
+                    "url": "https://github.com/s-chudmunge"
+                },
+                "publisher": {
+                    "@type": "Person",
+                    "name": author,
+                    "url": "https://github.com/s-chudmunge"
+                },
+                "keywords": keywords_list,
+                "articleSection": frontmatter.get('subject', 'Machine Learning')
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": f"{canonical_url}#breadcrumb",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Home",
+                        "item": "https://s-chudmunge.github.io/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": "Articles",
+                        "item": f"{SITE_URL}/"
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": title
+                    }
+                ]
+            }
+        ]
+    }
+    return json.dumps(schema, indent=2)
 
 def build_article_html(frontmatter, body_html, raw_body):
     title = frontmatter.get('title', 'Untitled Article')
@@ -731,8 +1055,21 @@ def build_article_html(frontmatter, body_html, raw_body):
     technical_insight = frontmatter.get('technicalInsight', '')
     read_time = estimate_read_time(raw_body)
 
+    canonical_url = f"{SITE_URL}/{slug}/"
+    og_image = f"{SITE_URL}{hero_image}" if hero_image.startswith('/') else f"{SITE_URL}/{hero_image}"
+
+    synonyms = frontmatter.get('synonyms', [])
+    keywords = ", ".join([title, subject, author] + synonyms)
+
+    try:
+        dt = datetime.strptime(date, "%B %d, %Y")
+        published_iso = dt.strftime("%Y-%m-%dT00:00:00Z")
+    except Exception:
+        published_iso = "2026-09-25T00:00:00Z"
+
     # Convert root-relative image paths to relative paths for depth-1 directories
     rel_hero = hero_image.lstrip('/')
+    hero_section = ""
     if hero_image:
         hero_section = f'<div class="hero-image-wrapper"><img src="../{rel_hero}" alt="{title}"></div>'
 
@@ -746,11 +1083,23 @@ def build_article_html(frontmatter, body_html, raw_body):
     # Rewrite /images/ to ../images/ in body_html
     body_html = re.sub(r'src="/images/', r'src="../images/', body_html)
 
+    # Add IDs to headings and extract TOC
+    body_html, headings = extract_headings_and_add_ids(body_html)
+
     # Wrap tables in responsive wrapper
     body_html = re.sub(r'(<table>.*?</table>)', r'<div class="table-wrapper">\1</div>', body_html, flags=re.DOTALL)
 
     # Style captions following images: <p><em>Figure ...</em></p>
     body_html = re.sub(r'<p>(<em>(?:Figure|Table)\s+\d+:.*?</em>)</p>', r'<div class="figure-caption">\1</div>', body_html)
+
+    # Build Table of Contents HTML
+    toc_items = []
+    for h in headings:
+        cls = "toc-item h3" if h['level'] == 3 else "toc-item"
+        toc_items.append(f'<li class="{cls}"><a href="#{h["id"]}" class="toc-link">{h["title"]}</a></li>')
+    toc_html = "\n      ".join(toc_items)
+
+    schema_json = build_schema_json(frontmatter, canonical_url, og_image, excerpt)
 
     return HTML_TEMPLATE.format(
         title=title,
@@ -758,13 +1107,52 @@ def build_article_html(frontmatter, body_html, raw_body):
         author=author,
         date=date,
         subject=subject,
-        hero_image=hero_image,
+        hero_image=og_image,
         excerpt=excerpt,
+        keywords=keywords,
+        canonical_url=canonical_url,
+        og_image=og_image,
+        published_iso=published_iso,
+        schema_json=schema_json,
         read_time=read_time,
         hero_section=hero_section,
         insight_section=insight_section,
-        body_html=body_html
+        body_html=body_html,
+        toc_html=toc_html
     )
+
+def generate_sitemap_and_robots(articles_meta):
+    # sitemap.xml
+    sitemap = ['<?xml version="1.0" encoding="UTF-8"?>',
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+               '  <url>',
+               f'    <loc>{SITE_URL}/</loc>',
+               f'    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>',
+               '    <changefreq>weekly</changefreq>',
+               '    <priority>1.0</priority>',
+               '  </url>']
+
+    for a in articles_meta:
+        sitemap.extend([
+            '  <url>',
+            f'    <loc>{SITE_URL}/{a["slug"]}/</loc>',
+            f'    <lastmod>{datetime.now().strftime("%Y-%m-%d")}</lastmod>',
+            '    <changefreq>monthly</changefreq>',
+            '    <priority>0.9</priority>',
+            '  </url>'
+        ])
+    sitemap.append('</urlset>')
+
+    sitemap_path = os.path.join(PROJECT_DIR, 'sitemap.xml')
+    with open(sitemap_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(sitemap))
+    print("✓ Generated: sitemap.xml")
+
+    # robots.txt
+    robots_path = os.path.join(PROJECT_DIR, 'robots.txt')
+    with open(robots_path, 'w', encoding='utf-8') as f:
+        f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n")
+    print("✓ Generated: robots.txt")
 
 def build_all():
     md_files = [f for f in os.listdir(PROJECT_DIR) if f.endswith('.md') and f.lower() != 'readme.md']
@@ -778,7 +1166,6 @@ def build_all():
 
         title = frontmatter.get('title', md_file.replace('.md', ''))
         slug = frontmatter.get('slug', md_file.replace('.md', ''))
-        short_slug = frontmatter.get('shortSlug')
 
         processed_body = process_custom_blocks(raw_body)
         protected_body, placeholders = protect_latex(processed_body)
@@ -809,7 +1196,10 @@ def build_all():
             'heroImage': frontmatter.get('heroImage', '')
         })
 
-    # Minimal clean index.html at root (in case root is visited)
+    # Generate sitemap and robots
+    generate_sitemap_and_robots(articles_meta)
+
+    # Minimal clean index.html at root
     if articles_meta:
         first_article = articles_meta[0]
         root_index = f"""<!DOCTYPE html>
