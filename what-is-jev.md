@@ -50,7 +50,7 @@ Suppose a customer writes: *"I updated to version 4.2 and our daily data export 
 
 ### The Sequential Decoding Bottleneck
 
-When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating `{`, then `\n`, then `"category":`, and finally `"infrastructure"`, before closing the brackets.
+When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating individual tokens—an opening brace `{`, a newline, the key `"category"`, and finally the value `"infrastructure"`—before closing the brackets.
 
 To output that single category, the GPU must sweep through **every single weight matrix across all transformer layers** for each token. Because modern GPU memory architectures are memory-bandwidth bound during generation, the hardware spends most of its clock cycles physically moving terabytes of model weights from off-chip device VRAM (HBM) into tiny on-chip SRAM cache lines just to multiply them against a single vector.
 
@@ -60,7 +60,7 @@ This creates three fundamental points of friction for software systems:
 
 1. **Latency Inflation:** Autoregressive generation takes 500 to 2,000 milliseconds regardless of how simple the decision is, because clock time is tethered to token count rather than decision difficulty.
 2. **The Formatting Fragility Trap:** If the model hallucinates a trailing comma or drops a quotation mark, JSON parsing throws a syntax error. Your software application crashes unless wrapped in defensive regex retry wrappers.
-3. **The Calibration Deficit:** Autoregressive models optimize for *textual plausibility* (what word sounds natural next?), not *epistemic truth*. When an LLM outputs `"confidence": 0.95`, that 0.95 is simply a generated string of text characters. It is not a mathematically calibrated probability.
+3. **The Calibration Deficit:** Autoregressive models optimize for *textual plausibility* (what word sounds natural next?), not *epistemic truth*. When an LLM outputs `"confidence": 0.95`, that 0.95 is simply a generated string of characters—it is not a mathematically calibrated probability.
 
 A common developer assumption is: *"Why not just use OpenAI Structured Outputs or Instructor?"* Structured Outputs (`response_format: { type: "json_schema" }`) constrain an autoregressive LLM to sample tokens conforming to a context-free grammar. While this guarantees syntactically valid JSON, it does not alter the underlying physics: the model still generates character by character, memory latency remains identical, and probabilities remain uncalibrated.
 
@@ -93,7 +93,7 @@ Think of a `noul` as a semantic multimeter. You touch two test leads to a circui
 - **$p = 0.50$ (Epistemic Indifference):** The state provides zero evidence for or against.
 - **$p < 0.10$ (Decisive Falsification):** Directly contradicted by the state.
 
-Notice what happens at $p = 0.50$. In a traditional LLM asked for a boolean `true`/`false`, the model is forced to pick one word, flipping an arbitrary coin if it is uncertain. A `noul` makes epistemic uncertainty visible. If the context contains zero evidence for the proposition, it outputs $p = 0.50$ and an overall confidence near zero.
+Notice what happens at $p = 0.50$. In a traditional LLM asked for a boolean assertion (`true` or `false`), the model is forced to pick one word, flipping an arbitrary coin if it is uncertain. A `noul` makes epistemic uncertainty visible: if the context contains zero evidence for the proposition, it outputs $p = 0.50$ with an overall confidence near zero.
 
 Here, developers often ask: *Is confidence the same as probability?* 
 They are mathematically distinct in Jev:
@@ -108,13 +108,22 @@ In runtime code, developers do not parse strings; they write standard numerical 
 
 The **`choice`** primitive represents categorical selection across $M$ discrete options.
 
-In standard LLM completions, if you ask a model to choose between `"data_pipeline"` and `"infra_ops"`, the model outputs a single string: `"data_pipeline"`. But what if the model's internal probability was $51\%$ for data and $49\%$ for infra? The application has no way of knowing it was an almost even split. It blindly executes the single option.
+In standard LLM completions, if you ask a model to choose between `data_pipeline` and `infra_ops`, the model outputs a single text string: `"data_pipeline"`. But what if the model's internal probability was $51\%$ for data and $49\%$ for infra? The application has no way of knowing it was an almost even split—it blindly executes the single option.
 
-A `choice` primitive returns the complete probability simplex alongside an epistemic confidence metric—for example: `selected = "data_pipeline"` with confidence $0.91$ and distribution `{"data_pipeline": 0.84, "infra_ops": 0.12, "auth_security": 0.03, "frontend_ui": 0.01}`.
+A `choice` primitive returns the complete probability simplex alongside an epistemic confidence metric. For instance, evaluating an incoming operational ticket yields:
 
-Having access to the underlying distribution allows runtime code to handle edge cases cleanly:
-- **Decisive Case:** `{"data_pipeline": 0.94, "infra_ops": 0.04}`. The margin of separation is wide ($\Delta p = 0.90$). Route directly to the data on-call engineer.
-- **Tangled Case:** `{"data_pipeline": 0.47, "infra_ops": 0.45}`. The margin of separation is tiny ($\Delta p = 0.02$). The incident touches both infrastructure and data ingestion. The system automatically cross-tags both engineering teams simultaneously.
+- **Selected Choice:** `data_pipeline`
+- **Epistemic Confidence ($c$):** $0.91$
+- **Simplex Distribution ($\mathbf{p}$):**
+  - `data_pipeline`: $0.84$
+  - `infra_ops`: $0.12$
+  - `auth_security`: $0.03$
+  - `frontend_ui`: $0.01$
+
+Having access to the complete distribution allows runtime logic to handle edge cases with mathematical precision:
+
+- **Decisive Case ($p_{\text{data}} = 0.94, p_{\text{infra}} = 0.04$):** The margin of separation is wide ($\Delta p = 0.90$). The incident routes directly to the data on-call engineer.
+- **Tangled Case ($p_{\text{data}} = 0.47, p_{\text{infra}} = 0.45$):** The margin of separation is tiny ($\Delta p = 0.02$). The incident touches both infrastructure and data ingestion, so the system automatically cross-tags both engineering teams simultaneously.
 
 ---
 
@@ -126,9 +135,9 @@ Many engineering decisions are not binary toggles or distinct categories; they e
 - Code review risk evaluation
 - Security vulnerability severity (CVSS 0.0 to 10.0)
 
-When prompt engineers ask an LLM to "rate severity from 0 to 4", the model outputs a single integer character: `"3"`. 
+When prompt engineers ask an LLM to rate severity from 0 to 4, the model typically outputs a single discrete integer token: `3`.
 
-This introduces quantization error. What if the bug is more severe than a typical 3, but not quite a total system outage (4)? An integer cannot express this nuance.
+This introduces quantization error. What if a production defect is more severe than a routine level 3, but not quite a total level 4 outage? An integer cannot express this nuance.
 
 The **`score`** primitive solves this problem by taking an ordered discrete rubric $\{0, 1, \dots, K\}$ and calculating a **probability-weighted continuous expected value**:
 
@@ -136,7 +145,7 @@ $$
 \hat{s} = \sum_{k=0}^K k \cdot p_k, \quad \text{where } \sum_{k=0}^K p_k = 1.0
 $$
 
-For an incident with anchor probabilities `[0.01, 0.02, 0.07, 0.35, 0.55]`, Jev outputs a continuous score of **`3.42`**. 
+For an incident with anchor probabilities $[0.01, 0.02, 0.07, 0.35, 0.55]$, Jev outputs a continuous expected value score of **3.42**. 
 
 Because this is a continuous floating-point number, an incident triage queue can sort issues with exact mathematical precision:
 - An outage with $\hat{s} = 3.85$ automatically sorts ahead of an incident with $\hat{s} = 3.10$, even though both would be coarsely labeled "level 3" by an LLM.

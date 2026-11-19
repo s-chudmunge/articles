@@ -400,15 +400,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .post-content blockquote p:first-child {{ margin-top: 0; }}
   .post-content blockquote p:last-child {{ margin-bottom: 0; }}
 
-  /* Inline Code */
+  /* Inline Code: Seamless, borderless, academic typography */
   .post-content :not(pre) > code {{
     font-family: var(--font-mono);
-    font-size: 0.88em;
-    background: var(--code-bg);
-    border: 1px solid var(--code-border);
-    padding: 0.15rem 0.4rem;
+    font-size: 0.86em;
+    background-color: rgba(175, 184, 193, 0.2);
+    color: #0969da;
+    padding: 0.12em 0.35em;
     border-radius: 4px;
-    color: var(--text-main);
+    border: none;
+    word-break: break-word;
+  }}
+
+  [data-theme="dark"] .post-content :not(pre) > code {{
+    background-color: rgba(110, 118, 129, 0.25);
+    color: #79c0ff;
+    border: none;
   }}
 
   /* Code Blocks */
@@ -1107,6 +1114,8 @@ def build_all():
         slug = frontmatter.get('slug', md_file.replace('.md', ''))
 
         processed_body = process_custom_blocks(raw_body)
+        # Ensure blank line before markdown lists so they don't get swallowed into paragraphs
+        processed_body = re.sub(r'([^\n])\n(- |\d+\. )', r'\1\n\n\2', processed_body)
         protected_body, placeholders = protect_latex(processed_body)
 
         body_html = markdown.markdown(
