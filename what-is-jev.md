@@ -24,11 +24,11 @@ This is an architectural mismatch.
 
 A Large Language Model (LLM) is an autoregressive next-token generator. It evaluates conditional probability distributions over a vocabulary of fifty to one hundred thousand tokens, repeatedly feeding its own generated output back into its input sequence. Using that mechanism to determine whether a ticket is a bug report or a billing inquiry is like assembling a printing press to flip a light switch.
 
-This is the problem that **Jev** — developed by Diogo Almeida and TypeSafe AI — addresses. Jev introduces a category of models built not for conversation or long-form prose, but for deterministic, calibrated decisions directly consumed by software runtime logic. 
+This is the problem that **Jev** (developed by Diogo Almeida and TypeSafe AI) addresses. Jev introduces a category of models built not for conversation or long-form prose, but for deterministic, calibrated decisions directly consumed by software runtime logic. 
 
 The terminology draws directly from psychologist Daniel Kahneman's foundational dual-process theory in *Thinking, Fast and Slow*. Kahneman divided human cognition into two complementary modes:
-- **System 1:** Fast, automatic, effortless, and reflexive. It operates in milliseconds without deliberate calculation—like ducking when an object flies toward your face, or reading words on a billboard.
-- **System 2:** Slow, deliberate, sequential, and computationally expensive. It allocates effortful mental focus—like calculating $17 \times 24$ in your head or composing a detailed legal brief.
+- **System 1:** Fast, automatic, effortless, and reflexive. It operates in milliseconds without deliberate calculation, like ducking when an object flies toward your face or reading words on a billboard.
+- **System 2:** Slow, deliberate, sequential, and computationally expensive. It allocates effortful mental focus, like calculating $17 \times 24$ in your head or composing a detailed legal brief.
 
 ![Daniel Kahneman's dual-process cognitive architecture: System 1 (fast, reflexive pattern evaluation) and System 2 (deliberate, sequential reasoning)](/images/articles/kahneman-dual-system-overview.png)
 
@@ -50,7 +50,7 @@ Suppose a customer writes: *"I updated to version 4.2 and our daily data export 
 
 ### The Decoding Bottleneck
 
-When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating individual tokens—an opening brace `{`, a newline, the key `"category"`, and finally the value `"infrastructure"`—before closing the brackets.
+When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating individual tokens (an opening brace `{`, a newline, the key `"category"`, and finally the value `"infrastructure"`) before closing the brackets.
 
 To output that single category, the GPU must sweep through **every single weight matrix across all transformer layers** for each token. Because modern GPU memory architectures are memory-bandwidth bound during generation, the hardware spends most of its clock cycles physically moving terabytes of model weights from off-chip device VRAM (HBM) into tiny on-chip SRAM cache lines just to multiply them against a single vector.
 
@@ -60,7 +60,7 @@ This creates three fundamental points of friction for software systems:
 
 1. **Latency Inflation:** Autoregressive generation takes 500 to 2,000 milliseconds regardless of how simple the decision is, because clock time is tethered to token count rather than decision difficulty.
 2. **The Formatting Fragility Trap:** If the model hallucinates a trailing comma or drops a quotation mark, JSON parsing throws a syntax error. Your software application crashes unless wrapped in defensive regex retry wrappers.
-3. **The Calibration Deficit:** Autoregressive models optimize for *textual plausibility* (what word sounds natural next?), not *epistemic truth*. When an LLM outputs `"confidence": 0.95`, that 0.95 is simply a generated string of characters—it is not a mathematically calibrated probability.
+3. **The Calibration Deficit:** Autoregressive models optimize for *textual plausibility* (what word sounds natural next?), not *epistemic truth*. When an LLM outputs `"confidence": 0.95`, that 0.95 is simply a generated string of characters, not a mathematically calibrated probability.
 
 A common developer assumption is: *"Why not just use OpenAI Structured Outputs or Instructor?"* Structured Outputs (`response_format: { type: "json_schema" }`) constrain an autoregressive LLM to sample tokens conforming to a context-free grammar. While this guarantees syntactically valid JSON, it does not alter the underlying physics: the model still generates character by character, memory latency remains identical, and probabilities remain uncalibrated.
 
@@ -108,7 +108,7 @@ In runtime code, developers do not parse strings; they write standard numerical 
 
 The **`choice`** primitive represents categorical selection across $M$ discrete options.
 
-In standard LLM completions, if you ask a model to choose between `data_pipeline` and `infra_ops`, the model outputs a single text string: `"data_pipeline"`. But what if the model's internal probability was $51\%$ for data and $49\%$ for infra? The application has no way of knowing it was an almost even split—it blindly executes the single option.
+In standard LLM completions, if you ask a model to choose between `data_pipeline` and `infra_ops`, the model outputs a single text string: `"data_pipeline"`. But what if the model's internal probability was $51\%$ for data and $49\%$ for infra? The application has no way of knowing it was an almost even split; it blindly executes the single option.
 
 A `choice` primitive returns the complete probability simplex alongside an epistemic confidence metric. For instance, evaluating an incoming operational ticket yields:
 
@@ -253,7 +253,7 @@ $$
 \mathcal{L}_{\text{Brier}} = \frac{1}{K} \sum_{k=1}^K \left(\hat{P}_k - y^*_k\right)^2
 $$
 
-A scoring rule is defined as *strictly proper* if the expected penalty is mathematically minimized when—and only when—the model reports its true internal Bayesian probability. If the model inflates its confidence to appear more certain, its mathematical loss increases.
+A scoring rule is defined as *strictly proper* if the expected penalty is mathematically minimized if and only if the model reports its true internal Bayesian probability. If the model inflates its confidence to appear more certain, its mathematical loss increases.
 
 #### 2. Expected Calibration Error (ECE) Penalties
 During training, predictions are partitioned into confidence bins $I_b = (\frac{b-1}{B}, \frac{b}{B}]$. For every bin, the system calculates the gap between predicted confidence and empirical accuracy:
@@ -278,7 +278,7 @@ $$
 \mathcal{H}(\hat{\mathbf{P}}) = -\sum_{k=1}^K \hat{P}_k \log \hat{P}_k
 $$
 
-Entropy is minimal ($0.0$) when the model places $100\%$ confidence on a single outcome. Entropy is maximal when the probabilities are distributed equally across all $K$ options (e.g., $50\%/50\%$ for a binary choice, or $25\%$ each for four options)—representing total epistemic uncertainty.
+Entropy is minimal ($0.0$) when the model places $100\%$ confidence on a single outcome. Entropy is maximal when the probabilities are distributed equally across all $K$ options (such as $50\%/50\%$ for a binary choice, or $25\%$ each for four options), representing total epistemic uncertainty.
 
 During training, whenever synthetic or audited test states lack sufficient information to resolve a decision, RLCD applies an **entropy regularization term**:
 
@@ -306,7 +306,7 @@ Within days, Nace AI announced **Drex**, a sub-6-billion parameter decision mode
 | **Surogate Rune** | MoE hybrid classifier | 25.8B | 390 tokens | **47.23** |
 | **Decider Chat** | Standard autoregressive chat LLM | 27.8B | 1,850 tokens | **46.08** |
 
-*Table 3: Public Decision Index 0.2 benchmark results across 40 evaluation tasks. Scores are chance-corrected (0.0 represents uniform random guessing). Median latency for non-autoregressive decision models is 50–180ms compared to 1,200ms+ for conversational chat models.*
+*Table 3: Public Decision Index 0.2 benchmark results across 40 evaluation tasks. Scores are chance-corrected (0.0 represents uniform random guessing). Median latency for non-autoregressive decision models is 50 to 180ms compared to 1,200ms+ for conversational chat models.*
 
 The data confirms a distinct shift: specialized non-autoregressive models routinely outperform multi-billion parameter chat models on structured reasoning and tool routing, while consuming a fraction of the token budget and compute energy.
 
@@ -333,7 +333,7 @@ By untangling reflexive judgment from creative generation, software architecture
 
 ## Note on the Architecture Diagrams
 
-TypeSafe AI has publicly confirmed that Jev is non-autoregressive, processes context in a single forward pass, and outputs typed primitives through specialized heads. The internal layer-level details shown in the diagrams — such as RoPE, SwiGLU, RMSNorm, and the cross-attention query pooling mechanism — are architectural inferences based on modern transformer conventions, not published specifications. TypeSafe has not disclosed the full internal design. The diagrams should be read as an illustrative reconstruction of how a model with Jev's confirmed behavior would plausibly be built, not as a reverse-engineered schematic.
+TypeSafe AI has publicly confirmed that Jev is non-autoregressive, processes context in a single forward pass, and outputs typed primitives through specialized heads. The internal layer-level details shown in the diagrams (such as RoPE, SwiGLU, RMSNorm, and the cross-attention query pooling mechanism) are architectural inferences based on modern transformer conventions, not published specifications. TypeSafe has not disclosed the full internal design. The diagrams should be read as an illustrative reconstruction of how a model with Jev's confirmed behavior would plausibly be built, not as a reverse-engineered schematic.
 
 ---
 
