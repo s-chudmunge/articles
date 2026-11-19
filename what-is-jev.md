@@ -42,13 +42,13 @@ To understand how Jev works, we need to examine where modern LLMs fail at decisi
 
 ---
 
-## The Autoregressive Tax on Software Workflows
+## The Problem with Using LLMs for Decisions
 
 To understand why a dedicated decision architecture is necessary, let us build a clear mental picture of what actually happens inside a GPU when an LLM answers a simple question.
 
 Suppose a customer writes: *"I updated to version 4.2 and our daily data export crashed with error 502."* You want to know one thing: **Is this an infrastructure outage or a billing inquiry?**
 
-### The Sequential Decoding Bottleneck
+### The Decoding Bottleneck
 
 When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating individual tokens—an opening brace `{`, a newline, the key `"category"`, and finally the value `"infrastructure"`—before closing the brackets.
 
@@ -84,7 +84,7 @@ Jev eliminates this conversion layer. It models decisions using three mathematic
 
 ---
 
-### 1. Noul: Irreducible Truth Verification
+### 1. Noul: True/False Verification
 
 The term **`noul`** draws inspiration from classical philosophical nomenclature for an irreducible concept or truth atom. 
 
@@ -104,7 +104,7 @@ In runtime code, developers do not parse strings; they write standard numerical 
 
 ---
 
-### 2. Choice: Calibrated Categorical Selection
+### 2. Choice: Picking Categories
 
 The **`choice`** primitive represents categorical selection across $M$ discrete options.
 
@@ -127,7 +127,7 @@ Having access to the complete distribution allows runtime logic to handle edge c
 
 ---
 
-### 3. Score: Continuous Metric Calibration Across Discrete Scales
+### 3. Score: Continuous Ratings
 
 Many engineering decisions are not binary toggles or distinct categories; they exist along an ordered spectrum:
 - Incident priority (P0, P1, P2, P3, P4)
@@ -153,7 +153,7 @@ Because this is a continuous floating-point number, an incident triage queue can
 
 ---
 
-## Architectural Blueprint: The Jev Decision Engine
+## Jev Architecture
 
 ![The Jev System One Decision Architecture: A bidirectional transformer encoder stack paired with parallel cross-attention decision query projections and typed probabilistic output heads](/images/articles/jev-architecture-blueprint.png)
 
@@ -169,7 +169,7 @@ In an autoregressive decoder, every token is blind to the future. Token 3 cannot
 
 Jev discards causal masking. It is built as a **bidirectional transformer encoder**. Every token in the input state can attend to every other token from the very first layer.
 
-### The Mechanics of a Single Forward Pass
+### A Single Forward Pass
 
 1. **State Ingestion:** The input state (such as a customer message, database log, or code diff) is tokenized and embedded with Rotary Position Embeddings (RoPE).
 2. **Global Contextualization:** The token sequence passes through $N$ encoder layers using FlashAttention. In a single dense matrix multiplication, every token exchanges information with every other token across the entire context window.
@@ -186,7 +186,7 @@ Whether you ask one question or ten questions, the encoder processes the context
 
 ---
 
-## Autoregressive Decoders vs. Parallel Decision Encoders
+## Generative LLMs vs. Decision Encoders
 
 To see the operational contrast clearly, let us compare their execution mechanics side by side:
 
@@ -204,7 +204,7 @@ To see the operational contrast clearly, let us compare their execution mechanic
 
 ---
 
-## How Jev is Trained: RLCD (Reinforcement Learning for Calibrated Decisions)
+## How Jev is Trained: RLCD
 
 Building a fast encoder is only half the battle. If the model's output probabilities are uncalibrated, software logic cannot trust them.
 
@@ -220,7 +220,7 @@ To prevent this, TypeSafe trained Jev using **RLCD (Reinforcement Learning for C
 
 *Figure 2: The RLCD Training Loop. Unlike RLHF which optimizes for human preference, RLCD evaluates predicted decision probabilities against deterministic ground-truth verification oracles. The loss optimizes strictly proper scoring rules (Brier loss) while penalizing Expected Calibration Error (ECE) to enforce mathematical confidence bounds.*
 
-### Where Ground Truth Comes From: Deterministic Oracles vs. Human Evaluators
+### Ground Truth Without Human Raters
 
 A fundamental question in training a decision model is: *Where does the ground-truth target $y^*$ come from if we eliminate human raters?*
 
@@ -242,7 +242,7 @@ Decision models do not predict stylistic prose; they predict discrete system out
 
 By relying on automated verification environments instead of subjective human scoring, RLCD can train over millions of verified state transitions with zero human-induced overconfidence bias.
 
-### The Three Components of RLCD
+### The Three Parts of RLCD Loss
 
 With ground truth established by empirical verification oracles, RLCD evaluates predicted probabilities against empirical ground truth using three mathematical objectives:
 
@@ -292,9 +292,9 @@ The result is a model whose output numbers can be treated as reliable operationa
 
 ---
 
-## The Landscape: Jev, Drex, and Decision Models
+## Benchmarks: Jev vs. Drex
 
-The release of Jev on September 15, 2026 sparked immediate competition in what is now termed the **Decision Model** space.
+The release of Jev on September 15, 2026 sparked immediate competition in the decision model space.
 
 Within days, Nace AI announced **Drex**, a sub-6-billion parameter decision model that competes directly with Jev on the public Decision Index benchmark. The benchmark evaluates models on 40 discrete tasks spanning routing, tool-call parameter validation, legal contract interpretation, and financial auditing.
 
@@ -312,7 +312,7 @@ The data confirms a distinct shift: specialized non-autoregressive models routin
 
 ---
 
-## The Architectural Mandate
+## Where Decision Models Fit
 
 A common question that arises when engineers first encounter Jev is: *Can Jev write the email response or summarize the document?*
 
@@ -331,7 +331,7 @@ By untangling reflexive judgment from creative generation, software architecture
 
 ---
 
-## A Note on the Architecture Diagrams
+## Note on the Architecture Diagrams
 
 TypeSafe AI has publicly confirmed that Jev is non-autoregressive, processes context in a single forward pass, and outputs typed primitives through specialized heads. The internal layer-level details shown in the diagrams — such as RoPE, SwiGLU, RMSNorm, and the cross-attention query pooling mechanism — are architectural inferences based on modern transformer conventions, not published specifications. TypeSafe has not disclosed the full internal design. The diagrams should be read as an illustrative reconstruction of how a model with Jev's confirmed behavior would plausibly be built, not as a reverse-engineered schematic.
 
