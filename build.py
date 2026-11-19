@@ -800,19 +800,9 @@ def build_all():
             f.write(full_html)
         print(f"✓ Generated: {slug}/index.html")
 
-        # Output to <shortSlug>/index.html if defined
-        if short_slug and short_slug != slug:
-            short_slug_dir = os.path.join(PROJECT_DIR, short_slug)
-            os.makedirs(short_slug_dir, exist_ok=True)
-            short_slug_out = os.path.join(short_slug_dir, 'index.html')
-            with open(short_slug_out, 'w', encoding='utf-8') as f:
-                f.write(full_html)
-            print(f"✓ Generated alias: {short_slug}/index.html")
-
         articles_meta.append({
             'title': title,
             'slug': slug,
-            'shortSlug': short_slug,
             'date': frontmatter.get('date', ''),
             'subject': frontmatter.get('subject', 'Article'),
             'excerpt': frontmatter.get('excerpt', ''),
