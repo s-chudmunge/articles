@@ -20,7 +20,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title} | Sankalp Chudmunge</title>
+<title>{title} - Sankalp Chudmunge</title>
 
 <!-- Primary SEO Meta Tags -->
 <meta name="title" content="{full_meta_title}">
@@ -1174,7 +1174,7 @@ def build_all():
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="0; url=./{first_article['slug']}/">
-<title>Articles | Sankalp Chudmunge</title>
+<title>Articles - Sankalp Chudmunge</title>
 <script>window.location.href = "./{first_article['slug']}/";</script>
 </head>
 <body style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">
