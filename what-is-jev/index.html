@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is Jev? The System One Model and Architecture Blueprint | Sankalp Chudmunge</title>
+
+<!-- Primary SEO Meta Tags -->
+<meta name="title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta name="description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
+<meta name="author" content="Sankalp Chudmunge">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/">
+<meta property="og:title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta property="og:description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
+<meta property="og:image" content="/images/articles/jev-architecture-blueprint.png">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://s-chudmunge.github.io/articles/what-is-jev-system-one-architecture/">
+<meta property="twitter:title" content="What is Jev? The System One Model and Architecture Blueprint">
+<meta property="twitter:description" content="Why are autoregressive token generators answering multiple-choice questions? A complete architectural dissection of Jev: non-autoregressive parallel evaluation, typed decision primitives, and RLCD training.">
+<meta property="twitter:image" content="/images/articles/jev-architecture-blueprint.png">
+
+<!-- KaTeX for Fast & Pristine LaTeX Math Rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });"></script>
+
+<!-- Prism.js for Syntax Highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+
+<!-- Twitter Widget for Embedded Tweets -->
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<style>
+  :root {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --btn-bg: #f1f5f9;
+    --btn-text: #334155;
+    --btn-border: #cbd5e1;
+    --link-color: #2563eb;
+    --link-hover: #1d4ed8;
+    --code-bg: #f1f5f9;
+    --code-border: #e2e8f0;
+    --callout-bg: #f0f9ff;
+    --callout-border: #0284c7;
+    --table-header: #f8fafc;
+    --table-row-hover: #f1f5f9;
+    --tag-bg: #eff6ff;
+    --tag-text: #1d4ed8;
+    --tag-border: #bfdbfe;
+  }
+
+  [data-theme="dark"] {
+    --bg-page: #0b0f19;
+    --bg-card: #151d30;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #263352;
+    --btn-bg: #1e293b;
+    --btn-text: #cbd5e1;
+    --btn-border: #334155;
+    --link-color: #60a5fa;
+    --link-hover: #93c5fd;
+    --code-bg: #0d1424;
+    --code-border: #1e293b;
+    --callout-bg: rgba(56, 189, 248, 0.08);
+    --callout-border: #38bdf8;
+    --table-header: #101728;
+    --table-row-hover: #192338;
+    --tag-bg: rgba(59, 130, 246, 0.12);
+    --tag-text: #93c5fd;
+    --tag-border: rgba(59, 130, 246, 0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.8;
+    padding: 0 1.25rem 5rem 1.25rem;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Top Navigation */
+  .top-nav {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.75rem 0 1.25rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-brand:hover { color: var(--link-color); }
+  .nav-brand span.author-name { color: var(--text-main); font-weight: 700; }
+
+  .theme-toggle {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--btn-text);
+    padding: 0.45rem 0.9rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover { opacity: 0.85; border-color: var(--link-color); }
+
+  /* Reading Progress */
+  #progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--link-color);
+    width: 0%;
+    z-index: 100;
+    transition: width 0.1s ease-out;
+  }
+
+  /* Article Wrapper */
+  .article-container {
+    max-width: 860px;
+    margin: 2.5rem auto 0 auto;
+  }
+
+  /* Article Header */
+  .article-header {
+    margin-bottom: 2rem;
+  }
+
+  .badge-subject {
+    display: inline-block;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border: 1px solid var(--tag-border);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.25rem;
+  }
+
+  h1.article-title {
+    font-size: clamp(2.1rem, 4.2vw, 2.85rem);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: var(--text-main);
+    margin-bottom: 1.25rem;
+  }
+
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.925rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .article-meta span { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+  /* Hero Image */
+  .hero-image-wrapper {
+    margin: 2.5rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  }
+  .hero-image-wrapper img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Technical Insight Callout Box */
+  .insight-box {
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-border);
+    border-radius: 0 10px 10px 0;
+    padding: 1.4rem 1.75rem;
+    margin: 2.25rem 0;
+  }
+  .insight-title {
+    font-size: 0.825rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--callout-border);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .insight-text {
+    font-size: 1.025rem;
+    line-height: 1.65;
+    color: var(--text-main);
+  }
+
+  /* Article Content Typography */
+  .article-content {
+    font-size: 1.1rem;
+    color: var(--text-main);
+  }
+
+  .article-content p {
+    margin: 1.5rem 0;
+  }
+
+  .article-content h2 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 3.5rem 0 1.25rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    line-height: 1.3;
+  }
+
+  .article-content h3 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 2.4rem 0 0.85rem 0;
+    line-height: 1.35;
+  }
+
+  .article-content ul, .article-content ol {
+    margin: 1.25rem 0 1.25rem 1.75rem;
+  }
+  .article-content li {
+    margin-bottom: 0.55rem;
+  }
+
+  .article-content a {
+    color: var(--link-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
+  .article-content a:hover {
+    color: var(--link-hover);
+  }
+
+  .article-content strong {
+    font-weight: 700;
+  }
+
+  .article-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 3.5rem 0;
+  }
+
+  .article-content blockquote {
+    border-left: 3px solid var(--callout-border);
+    background: var(--callout-bg);
+    padding: 0.85rem 1.25rem;
+    margin: 1.85rem 0;
+    border-radius: 0 8px 8px 0;
+    color: var(--text-main);
+  }
+
+  /* Inline Code */
+  .article-content :not(pre) > code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: var(--text-main);
+  }
+
+  /* Code Block Container with Copy Button */
+  .code-block-wrapper {
+    position: relative;
+    margin: 1.75rem 0;
+  }
+  .code-copy-btn {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.25rem 0.6rem;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-family: ui-monospace, monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+    z-index: 10;
+  }
+  .code-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .article-content pre {
+    background: #111827 !important;
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    padding: 1.25rem !important;
+    overflow-x: auto;
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  .article-content pre code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    color: #f8fafc;
+  }
+
+  /* Content Images */
+  .article-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    display: block;
+    margin: 2.25rem auto 0.75rem auto;
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.06);
+  }
+  
+  .article-content p > em:only-child,
+  .figure-caption {
+    display: block;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* Tables */
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 2.25rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: var(--bg-card);
+  }
+  th, td {
+    padding: 0.9rem 1.15rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+  th {
+    background: var(--table-header);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr:hover td {
+    background: var(--table-row-hover);
+  }
+
+  /* Embedded Loom Video */
+  .loom-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    margin: 2.5rem 0;
+    background: var(--bg-card);
+    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.06);
+  }
+  .loom-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  /* Embedded Tweet */
+  .tweet-container {
+    margin: 2.5rem 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Article Footer */
+  .article-footer {
+    margin-top: 4.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.925rem;
+    color: var(--text-muted);
+  }
+  .article-footer a {
+    color: var(--link-color);
+    text-decoration: none;
+  }
+  .article-footer a:hover { text-decoration: underline; }
+
+  /* Back to Top */
+  .back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--btn-text);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+  .back-to-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .back-to-top:hover {
+    transform: translateY(-2px);
+    border-color: var(--link-color);
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 0 1rem 3rem 1rem; }
+    h1.article-title { font-size: 1.85rem; }
+    .article-meta { gap: 0.75rem; font-size: 0.85rem; }
+    th, td { padding: 0.65rem 0.75rem; font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<header class="top-nav">
+  <a href="../" class="nav-brand">
+    ← <span class="author-name">Sankalp Chudmunge</span> / articles
+  </a>
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+    <span id="themeIcon">🌙</span>
+    <span id="themeText">Dark Mode</span>
+  </button>
+</header>
+
+<main class="article-container">
+  <article>
+    <header class="article-header">
+      <span class="badge-subject">Machine Learning</span>
+      <h1 class="article-title">What is Jev? The System One Model and Architecture Blueprint</h1>
+      <div class="article-meta">
+        <span>✍️ <strong>Sankalp Chudmunge</strong></span>
+        <span>📅 September 25, 2026</span>
+        <span>⏱️ 19 min read</span>
+      </div>
+    </header>
+
+    <div class="hero-image-wrapper"><img src="../images/articles/jev-architecture-blueprint.png" alt="What is Jev? The System One Model and Architecture Blueprint"></div>
+
+    <div class="insight-box">
+          <div class="insight-title">⚡ Technical Insight</div>
+          <div class="insight-text">Jev replaces autoregressive next-token decoding with parallel forward evaluation over a shared context state. Rather than generating JSON strings sequentially, learned classification heads compute calibrated probability distributions across typed primitives in a single pass.</div>
+        </div>
+
+    <div class="article-content">
+      <p>When an autonomous agent needs to decide whether to run a database query, or a support system routes an incoming ticket, standard engineering practice today involves prompting a large autoregressive language model. The model receives a prompt, enters an autoregressive loop, generates tokens one by one, formats them into a JSON string, and sends that text across the network. The application then parses that JSON, validates the schema with a library like Pydantic, catches formatting errors, and extracts a single enum value or boolean flag.</p>
+<p>This is an architectural mismatch.</p>
+<p>A Large Language Model (LLM) is an autoregressive next-token generator. It evaluates conditional probability distributions over a vocabulary of fifty to one hundred thousand tokens, repeatedly feeding its own generated output back into its input sequence. Using that mechanism to determine whether a ticket is a bug report or a billing inquiry is like assembling a printing press to flip a light switch.</p>
+<p>This is the problem that <strong>Jev</strong> — developed by Diogo Almeida and TypeSafe AI — addresses. Jev introduces a category of models built not for conversation or long-form prose, but for deterministic, calibrated decisions directly consumed by software runtime logic. </p>
+<p>The terminology draws directly from psychologist Daniel Kahneman's foundational dual-process theory in <em>Thinking, Fast and Slow</em>. Kahneman divided human cognition into two complementary modes:
+- <strong>System 1:</strong> Fast, automatic, effortless, and reflexive. It operates in milliseconds without deliberate calculation—like ducking when an object flies toward your face, or reading words on a billboard.
+- <strong>System 2:</strong> Slow, deliberate, sequential, and computationally expensive. It allocates effortful mental focus—like calculating $17 \times 24$ in your head or composing a detailed legal brief.</p>
+<p><img alt="Daniel Kahneman's dual-process cognitive architecture: System 1 (fast, reflexive pattern evaluation) and System 2 (deliberate, sequential reasoning)" src="../images/articles/kahneman-dual-system-overview.png" /></p>
+<p>In modern AI architectures, autoregressive models (like GPT-4, Claude, or reasoning models like o1) are System 2: they deliberate sequentially, generating token after token in an internal monologue. Jev is the missing <strong>System 1</strong>: an instant, non-generative, parallel reflex arc that evaluates state and renders calibrated judgment in tens of milliseconds.</p>
+<div class="tweet-container"><blockquote class="twitter-tweet" data-dnt="true"><a href="https://twitter.com/x/status/2099925682726002904"></a></blockquote></div>
+
+<p>To understand how Jev works, we need to examine where modern LLMs fail at decision routing, how Jev structures its typed primitives, how its parallel encoder architecture operates, and how Reinforcement Learning for Calibrated Decisions (RLCD) trains it to produce reliable probabilities.</p>
+<hr />
+<h2>The Autoregressive Tax on Software Workflows</h2>
+<p>To understand why a dedicated decision architecture is necessary, let us build a clear mental picture of what actually happens inside a GPU when an LLM answers a simple question.</p>
+<p>Suppose a customer writes: <em>"I updated to version 4.2 and our daily data export crashed with error 502."</em> You want to know one thing: <strong>Is this an infrastructure outage or a billing inquiry?</strong></p>
+<h3>The Sequential Decoding Bottleneck</h3>
+<p>When an autoregressive model processes this prompt, it does not evaluate the question as a whole. It treats the problem as a sequence completion game: generating <code>{</code>, then <code>\n</code>, then <code>"category":</code>, and finally <code>"infrastructure"</code>, before closing the brackets.</p>
+<p>To output that single category, the GPU must sweep through <strong>every single weight matrix across all transformer layers</strong> for each token. Because modern GPU memory architectures are memory-bandwidth bound during generation, the hardware spends most of its clock cycles physically moving terabytes of model weights from off-chip device VRAM (HBM) into tiny on-chip SRAM cache lines just to multiply them against a single vector.</p>
+<p>You are paying an enormous memory-bandwidth penalty for syntax tokens that carry zero semantic information.</p>
+<p>This creates three fundamental points of friction for software systems:</p>
+<ol>
+<li><strong>Latency Inflation:</strong> Autoregressive generation takes 500 to 2,000 milliseconds regardless of how simple the decision is, because clock time is tethered to token count rather than decision difficulty.</li>
+<li><strong>The Formatting Fragility Trap:</strong> If the model hallucinates a trailing comma or drops a quotation mark, JSON parsing throws a syntax error. Your software application crashes unless wrapped in defensive regex retry wrappers.</li>
+<li><strong>The Calibration Deficit:</strong> Autoregressive models optimize for <em>textual plausibility</em> (what word sounds natural next?), not <em>epistemic truth</em>. When an LLM outputs <code>"confidence": 0.95</code>, that 0.95 is simply a generated string of text characters. It is not a mathematically calibrated probability.</li>
+</ol>
+<p>A common developer assumption is: <em>"Why not just use OpenAI Structured Outputs or Instructor?"</em> Structured Outputs (<code>response_format: { type: "json_schema" }</code>) constrain an autoregressive LLM to sample tokens conforming to a context-free grammar. While this guarantees syntactically valid JSON, it does not alter the underlying physics: the model still generates character by character, memory latency remains identical, and probabilities remain uncalibrated.</p>
+<p>Jev removes text generation entirely. It has no vocabulary decoder head. It cannot write stories, draft emails, or converse. Instead, it accepts a block of text state, evaluates typed questions directly against that state, and outputs calibrated numbers in a single forward pass.</p>
+<hr />
+<h2>The Three Typed Primitives</h2>
+<p>In standard software engineering, functions return concrete types: a boolean, an enum, or a floating-point number. But when developers build with LLMs, they are forced to discard types, convert everything into conversational English, and parse strings back into types.</p>
+<p>Jev eliminates this conversion layer. It models decisions using three mathematically bounded primitives: <strong><code>noul</code></strong>, <strong><code>choice</code></strong>, and <strong><code>score</code></strong>.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align: left;">Primitive</th>
+<th style="text-align: left;">Mathematical Formulation</th>
+<th style="text-align: left;">Output Contract</th>
+<th style="text-align: left;">Semantic Meaning</th>
+<th style="text-align: left;">Systems Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong><code>noul</code></strong></td>
+<td style="text-align: left;">$p = \sigma(W_{\text{noul}} z + b) \in [0, 1]$</td>
+<td style="text-align: left;">Scalar float $p$ + confidence $c$</td>
+<td style="text-align: left;">Epistemic truth of a proposition</td>
+<td style="text-align: left;">Tool execution gating, security guardrails, boolean assertions</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>choice</code></strong></td>
+<td style="text-align: left;">$\mathbf{p} = \text{softmax}(W_{\text{choice}} z) \in \Delta^M$</td>
+<td style="text-align: left;">Selected key + full simplex $\mathbf{p} + c$</td>
+<td style="text-align: left;">Distribution over $M$ mutually exclusive options</td>
+<td style="text-align: left;">Request triage, model routing, workflow dispatch</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>score</code></strong></td>
+<td style="text-align: left;">$\mathbb{E}[S] = \sum_{k=0}^K k \cdot p_k \in [0, K]$</td>
+<td style="text-align: left;">Continuous float $\hat{s}$ + anchor probs $+ c$</td>
+<td style="text-align: left;">Calibrated expected value across an ordered scale</td>
+<td style="text-align: left;">Priority queues, risk evaluation, urgency indexing</td>
+</tr>
+</tbody>
+</table></div>
+<div class="figure-caption"><em>Table 1: Mathematical formulation, output contracts, and systems applications of Jev's three typed primitives (<code>noul</code>, <code>choice</code>, <code>score</code>).</em></div>
+<hr />
+<h3>1. Noul: Irreducible Truth Verification</h3>
+<p>The term <strong><code>noul</code></strong> draws inspiration from classical philosophical nomenclature for an irreducible concept or truth atom. </p>
+<p>Think of a <code>noul</code> as a semantic multimeter. You touch two test leads to a circuit board to measure whether voltage exists. Similarly, a <code>noul</code> attaches an assertive proposition to a block of text and measures its truth value on a continuous dial from $0.0$ to $1.0$:
+- <strong>$p > 0.90$ (Decisive Verification):</strong> Unambiguously confirmed by the state.
+- <strong>$p = 0.50$ (Epistemic Indifference):</strong> The state provides zero evidence for or against.
+- <strong>$p < 0.10$ (Decisive Falsification):</strong> Directly contradicted by the state.</p>
+<p>Notice what happens at $p = 0.50$. In a traditional LLM asked for a boolean <code>true</code>/<code>false</code>, the model is forced to pick one word, flipping an arbitrary coin if it is uncertain. A <code>noul</code> makes epistemic uncertainty visible. If the context contains zero evidence for the proposition, it outputs $p = 0.50$ and an overall confidence near zero.</p>
+<p>Here, developers often ask: <em>Is confidence the same as probability?</em> 
+They are mathematically distinct in Jev:
+- <strong>Probability ($p$):</strong> The model's estimate of event likelihood given the provided state (e.g., "There is an 89% probability this customer demands a refund").
+- <strong>Confidence ($c$):</strong> How much evidence the state contained to support making a decision at all. If the state is empty or uninformative, Jev outputs probabilities near uniform random distribution with confidence approaching $0.0$.</p>
+<p>In runtime code, developers do not parse strings; they write standard numerical assertions directly on calibrated output values: if the truth probability $p \ge 0.85$ and confidence $c \ge 0.70$, the system executes the tool; if confidence drops below $0.30$, it routes the request to a supervisor.</p>
+<hr />
+<h3>2. Choice: Calibrated Categorical Selection</h3>
+<p>The <strong><code>choice</code></strong> primitive represents categorical selection across $M$ discrete options.</p>
+<p>In standard LLM completions, if you ask a model to choose between <code>"data_pipeline"</code> and <code>"infra_ops"</code>, the model outputs a single string: <code>"data_pipeline"</code>. But what if the model's internal probability was $51\%$ for data and $49\%$ for infra? The application has no way of knowing it was an almost even split. It blindly executes the single option.</p>
+<p>A <code>choice</code> primitive returns the complete probability simplex alongside an epistemic confidence metric—for example: <code>selected = "data_pipeline"</code> with confidence $0.91$ and distribution <code>{"data_pipeline": 0.84, "infra_ops": 0.12, "auth_security": 0.03, "frontend_ui": 0.01}</code>.</p>
+<p>Having access to the underlying distribution allows runtime code to handle edge cases cleanly:
+- <strong>Decisive Case:</strong> <code>{"data_pipeline": 0.94, "infra_ops": 0.04}</code>. The margin of separation is wide ($\Delta p = 0.90$). Route directly to the data on-call engineer.
+- <strong>Tangled Case:</strong> <code>{"data_pipeline": 0.47, "infra_ops": 0.45}</code>. The margin of separation is tiny ($\Delta p = 0.02$). The incident touches both infrastructure and data ingestion. The system automatically cross-tags both engineering teams simultaneously.</p>
+<hr />
+<h3>3. Score: Continuous Metric Calibration Across Discrete Scales</h3>
+<p>Many engineering decisions are not binary toggles or distinct categories; they exist along an ordered spectrum:
+- Incident priority (P0, P1, P2, P3, P4)
+- Customer churn risk
+- Code review risk evaluation
+- Security vulnerability severity (CVSS 0.0 to 10.0)</p>
+<p>When prompt engineers ask an LLM to "rate severity from 0 to 4", the model outputs a single integer character: <code>"3"</code>. </p>
+<p>This introduces quantization error. What if the bug is more severe than a typical 3, but not quite a total system outage (4)? An integer cannot express this nuance.</p>
+<p>The <strong><code>score</code></strong> primitive solves this problem by taking an ordered discrete rubric $\{0, 1, \dots, K\}$ and calculating a <strong>probability-weighted continuous expected value</strong>:</p>
+<p>$$
+\hat{s} = \sum_{k=0}^K k \cdot p_k, \quad \text{where } \sum_{k=0}^K p_k = 1.0
+$$</p>
+<p>For an incident with anchor probabilities <code>[0.01, 0.02, 0.07, 0.35, 0.55]</code>, Jev outputs a continuous score of <strong><code>3.42</code></strong>. </p>
+<p>Because this is a continuous floating-point number, an incident triage queue can sort issues with exact mathematical precision:
+- An outage with $\hat{s} = 3.85$ automatically sorts ahead of an incident with $\hat{s} = 3.10$, even though both would be coarsely labeled "level 3" by an LLM.
+- The anchor probabilities reveal the shape of the uncertainty: $90\%$ of the probability mass ($0.35 + 0.55$) is concentrated in levels 3 and 4, proving the incident is severe without ambiguity.</p>
+<hr />
+<h2>Architectural Blueprint: The Jev Decision Engine</h2>
+<p><img alt="The Jev System One Decision Architecture: A bidirectional transformer encoder stack paired with parallel cross-attention decision query projections and typed probabilistic output heads" src="../images/articles/jev-architecture-blueprint.png" /></p>
+<div class="figure-caption"><em>Figure 1: The Jev System One Decision Architecture. Unlike causal generative decoders, Jev processes the shared state context through a bidirectional encoder stack with FlashAttention. Multiple typed queries (Noul, Choice, Score) attend to the contextualized memory in parallel, projecting into specialized, calibrated output heads in a single forward pass.</em></div>
+<div class="loom-container"><iframe src="https://www.loom.com/embed/18c4dbcf8db546dfb2d7f2ef018e78e4" allowfullscreen></iframe></div>
+
+<p>To understand how Jev executes these evaluations without generating tokens, look closely at <strong>Figure 1</strong> and the video walkthrough above.</p>
+<p>In an autoregressive decoder, every token is blind to the future. Token 3 cannot look at Token 10 because a causal mask zeroes out future connections. That restriction is essential for generating text, but it is a handicap for understanding context.</p>
+<p>Jev discards causal masking. It is built as a <strong>bidirectional transformer encoder</strong>. Every token in the input state can attend to every other token from the very first layer.</p>
+<h3>The Mechanics of a Single Forward Pass</h3>
+<ol>
+<li><strong>State Ingestion:</strong> The input state (such as a customer message, database log, or code diff) is tokenized and embedded with Rotary Position Embeddings (RoPE).</li>
+<li><strong>Global Contextualization:</strong> The token sequence passes through $N$ encoder layers using FlashAttention. In a single dense matrix multiplication, every token exchanges information with every other token across the entire context window.</li>
+<li><strong>Parallel Query Injection:</strong> Each typed question defined in the request is converted into a task-specific query token vector $Q_k \in \mathbb{R}^{d_{\text{model}}}$.</li>
+<li><strong>Cross-Attention Pooling:</strong> The question vectors attend to the globally contextualized memory of the state. This gathers all relevant evidence across the document into a single compact latent vector $z_k$ for each question.</li>
+<li><strong>Specialized Output Projections:</strong> Each $z_k$ vector is fed directly into its corresponding typed head:</li>
+<li><strong>Noul Head:</strong> $p = \sigma(W_{\text{noul}} z_k + b)$</li>
+<li><strong>Choice Head:</strong> $\mathbf{p} = \text{softmax}(W_{\text{choice}} z_k)$</li>
+<li><strong>Score Head:</strong> $\hat{s} = \sum_{j=0}^K j \cdot [\text{softmax}(W_{\text{score}} z_k)]_j$</li>
+</ol>
+<p>Notice the critical structural difference: <strong>Step 2 (the expensive transformer pass) is computed only once.</strong> </p>
+<p>Whether you ask one question or ten questions, the encoder processes the context state once. Evaluating ten questions simply means projecting ten lightweight cross-attention heads against the same shared memory in parallel.</p>
+<hr />
+<h2>Autoregressive Decoders vs. Parallel Decision Encoders</h2>
+<p>To see the operational contrast clearly, let us compare their execution mechanics side by side:</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align: left;">Architectural Property</th>
+<th style="text-align: left;">Standard Generative LLM</th>
+<th style="text-align: left;">Jev Decision Engine</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Task</strong></td>
+<td style="text-align: left;">Autoregressive sequence generation</td>
+<td style="text-align: left;">Parallel probabilistic evaluation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Attention Mask</strong></td>
+<td style="text-align: left;">Causal (lower-triangular, tokens only see the past)</td>
+<td style="text-align: left;">Bidirectional (full visibility across entire state)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Inference Passes</strong></td>
+<td style="text-align: left;">$T$ sequential forward passes (one per token generated)</td>
+<td style="text-align: left;">$1$ single forward pass for all questions</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hardware Bottleneck</strong></td>
+<td style="text-align: left;">Memory-bandwidth bound (reading weights from HBM repeatedly)</td>
+<td style="text-align: left;">Compute-bound dense matrix multiplication</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Output Type</strong></td>
+<td style="text-align: left;">Token strings (unstructured text requiring JSON parsing)</td>
+<td style="text-align: left;">Typed scalars, probability vectors, and confidence values</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Latency Profile</strong></td>
+<td style="text-align: left;">$600\text{ ms} - 3000\text{ ms}$</td>
+<td style="text-align: left;">$70\text{ ms} - 500\text{ ms}$</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Failure Modes</strong></td>
+<td style="text-align: left;">Broken JSON, schema hallucinations, missing brackets</td>
+<td style="text-align: left;">Classification error (strictly bounded within schema)</td>
+</tr>
+</tbody>
+</table></div>
+<div class="figure-caption"><em>Table 2: Structural and mechanical comparison between autoregressive generative LLMs and Jev's parallel decision encoder.</em></div>
+<hr />
+<h2>How Jev is Trained: RLCD (Reinforcement Learning for Calibrated Decisions)</h2>
+<p>Building a fast encoder is only half the battle. If the model's output probabilities are uncalibrated, software logic cannot trust them.</p>
+<p>In standard LLMs, models are aligned using Reinforcement Learning from Human Feedback (RLHF). Human evaluators (or AI judges) review two answers and pick the one they prefer.</p>
+<p>RLHF is effective for making conversational agents polite, organized, and articulate. But RLHF is actively harmful for probabilistic decision-making. </p>
+<p>Why? Because RLHF introduces an <strong>overconfidence bias</strong>. If a human asks an LLM a difficult question and the model responds with total confidence (<em>"The capital of Australia is Canberra with 100% certainty"</em>), human raters reward it. If the model honestly says <em>"I am 52% sure it is Canberra and 48% sure it is Sydney"</em>, human raters tend to penalize it as hesitant or unhelpful. Over hundreds of thousands of RLHF iterations, models learn to sound confident even when they are guessing.</p>
+<p>To prevent this, TypeSafe trained Jev using <strong>RLCD (Reinforcement Learning for Calibrated Decisions)</strong>.</p>
+<p><img alt="Reinforcement Learning for Calibrated Decisions (RLCD): Epistemic calibration loop optimizing strictly proper scoring rules and ECE penalties" src="../images/articles/rlcd-calibration-pipeline.png" /></p>
+<div class="figure-caption"><em>Figure 2: The RLCD Training Loop. Unlike RLHF which optimizes for human preference, RLCD evaluates predicted decision probabilities against deterministic ground-truth verification oracles. The loss optimizes strictly proper scoring rules (Brier loss) while penalizing Expected Calibration Error (ECE) to enforce mathematical confidence bounds.</em></div>
+<h3>Where Ground Truth Comes From: Deterministic Oracles vs. Human Evaluators</h3>
+<p>A fundamental question in training a decision model is: <em>Where does the ground-truth target $y^*$ come from if we eliminate human raters?</em></p>
+<p>In standard language model training (such as RLHF or DPO), human evaluators provide subjective ratings on prose. Because two humans frequently disagree on which essay or code explanation is "better", human ratings are inherently noisy, expensive to collect, and subject to rater fatigue.</p>
+<p>Decision models do not predict stylistic prose; they predict discrete system outcomes, tool-call validity, routing correctness, and classification states. Because of this structural constraint, Jev's training pipeline replaces human raters with <strong>deterministic verification oracles</strong> across four primary data streams:</p>
+<ol>
+<li>
+<p><strong>Compiler, Runtime, and Test Execution Oracles:</strong>
+   When evaluating tool selection and code dispatch, ground truth is established by deterministic execution. If Jev evaluates whether an API payload or SQL query will fulfill a data extraction request, the system runs the query inside an isolated sandbox. If the query executes cleanly, passes schema validation, and satisfies assertion tests, $y^* = 1.0$. If it raises an unhandled exception, syntax error, or returns a null set when data was present, $y^* = 0.0$. The feedback loop is binary, automated, and impossible for the model to game with persuasive language.</p>
+</li>
+<li>
+<p><strong>Historical System and Incident Audit Logs:</strong>
+   Production software environments generate massive volumes of verified historical outcomes: resolved customer incident escalations, fraud dispute determinations, transaction clearance records, and security alert triages. These records contain the exact text context known at the moment of decision, paired with the final, audited operational outcome. By training on these immutable event ledgers, the model learns to evaluate operational states against real-world consequences rather than subjective human opinion.</p>
+</li>
+<li>
+<p><strong>Formal Verification and Synthetic Constraint Rubrics:</strong>
+   For logical routing, permission checks, and structured schema conformity, training datasets are synthesized using formal verification tools, SAT/SMT solvers, and property-based test generators. Because the problems are generated from mathematical proofs and explicit state transition tables, the true answer $y^*$ is mathematically provable. Training on synthetic formal tasks allows the pipeline to scale to millions of diverse decision paths without human intervention.</p>
+</li>
+<li>
+<p><strong>Curated Ambiguity and Information-Deficient Edge Cases:</strong>
+   To train the model to output accurate epistemic uncertainty (rather than guessing), data engineers deliberately construct contexts with stripped or contradictory evidence. For example, a question about database migration status is paired with an unrelated frontend CSS log. In these cases, the target ground-truth distribution is explicitly calibrated to uniform probability ($P = 0.50$ for binary decisions), teaching the loss function to penalize any unwarranted decisiveness.</p>
+</li>
+</ol>
+<p>By relying on automated verification environments instead of subjective human scoring, RLCD can train over millions of verified state transitions with zero human-induced overconfidence bias.</p>
+<h3>The Three Components of RLCD</h3>
+<p>With ground truth established by empirical verification oracles, RLCD evaluates predicted probabilities against empirical ground truth using three mathematical objectives:</p>
+<h4>1. Strictly Proper Scoring Rules (Brier Loss)</h4>
+<p>To align predicted probability $\hat{P}$ with ground-truth binary outcome $y^* \in \{0, 1\}$, RLCD minimizes the Brier score:</p>
+<p>$$
+\mathcal{L}_{\text{Brier}} = \frac{1}{K} \sum_{k=1}^K \left(\hat{P}_k - y^*_k\right)^2
+$$</p>
+<p>A scoring rule is defined as <em>strictly proper</em> if the expected penalty is mathematically minimized when—and only when—the model reports its true internal Bayesian probability. If the model inflates its confidence to appear more certain, its mathematical loss increases.</p>
+<h4>2. Expected Calibration Error (ECE) Penalties</h4>
+<p>During training, predictions are partitioned into confidence bins $I_b = (\frac{b-1}{B}, \frac{b}{B}]$. For every bin, the system calculates the gap between predicted confidence and empirical accuracy:</p>
+<p>$$
+\text{ECE} = \sum_{b=1}^B \frac{|I_b|}{N} \left| \text{acc}(I_b) - \text{conf}(I_b) \right|
+$$</p>
+<p>Think of this as an explicit honesty check: If Jev assigns an $80\%$ probability to 1,000 separate events, exactly 800 of them must turn out to be true. If only 600 turn out true, the ECE penalty injects a large corrective gradient.</p>
+<h4>3. Epistemic Uncertainty and Entropy Regularization</h4>
+<p>To understand why this objective is needed, consider the difference between two types of uncertainty in machine learning:
+- <strong>Aleatoric Uncertainty (Inherent Randomness):</strong> You flip an unbiased coin. You have complete information about the coin and physics, but the outcome is still a 50/50 chance.
+- <strong>Epistemic Uncertainty (Lack of Knowledge):</strong> A user asks: <em>"Did the migration script finish successfully?"</em> But the provided text context contains only an unrelated error log from a frontend checkout page. The context contains zero evidence to answer the question.</p>
+<p>In generative LLMs, the model hallucinates an answer because autoregressive architectures are trained to keep generating plausible-sounding text even when context is missing.</p>
+<p>In information theory, <strong>entropy</strong> measures the degree of unpredictability or disorder in a probability distribution:</p>
+<p>$$
+\mathcal{H}(\hat{\mathbf{P}}) = -\sum_{k=1}^K \hat{P}_k \log \hat{P}_k
+$$</p>
+<p>Entropy is minimal ($0.0$) when the model places $100\%$ confidence on a single outcome. Entropy is maximal when the probabilities are distributed equally across all $K$ options (e.g., $50\%/50\%$ for a binary choice, or $25\%$ each for four options)—representing total epistemic uncertainty.</p>
+<p>During training, whenever synthetic or audited test states lack sufficient information to resolve a decision, RLCD applies an <strong>entropy regularization term</strong>:</p>
+<p>$$
+\mathcal{R}_{\text{Entropy}} = -\lambda \sum_{k=1}^K \hat{P}_k \log \hat{P}_k
+$$</p>
+<p>This objective explicitly penalizes the model for being decisive when it lacks data. If the context does not contain enough information, the gradient drives the output distribution toward uniform probability and drives the confidence scalar $c \to 0.0$.</p>
+<p>The result is a model whose output numbers can be treated as reliable operational error bars in production code: when Jev is certain, it acts decisively; when the context is blank or ambiguous, it signals total epistemic indifference instead of making an uncalibrated guess.</p>
+<hr />
+<h2>The Landscape: Jev, Drex, and Decision Models</h2>
+<p>The release of Jev on September 15, 2026 sparked immediate competition in what is now termed the <strong>Decision Model</strong> space.</p>
+<p>Within days, Nace AI announced <strong>Drex</strong>, a sub-6-billion parameter decision model that competes directly with Jev on the public Decision Index benchmark. The benchmark evaluates models on 40 discrete tasks spanning routing, tool-call parameter validation, legal contract interpretation, and financial auditing.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th style="text-align: left;">Model</th>
+<th style="text-align: left;">Architecture Paradigm</th>
+<th style="text-align: left;">Parameter Scale</th>
+<th style="text-align: left;">Tokens per Decision</th>
+<th style="text-align: left;">Decision Index 0.2 Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Drex 1.0</strong></td>
+<td style="text-align: left;">Non-autoregressive decision model</td>
+<td style="text-align: left;">&lt; 6B</td>
+<td style="text-align: left;">70 tokens</td>
+<td style="text-align: left;"><strong>51.73</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Jev 1.13.0</strong></td>
+<td style="text-align: left;">Non-autoregressive decision model</td>
+<td style="text-align: left;">Proprietary</td>
+<td style="text-align: left;">367 tokens</td>
+<td style="text-align: left;"><strong>51.67</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>AutoJev-27B</strong></td>
+<td style="text-align: left;">Fine-tuned dense transformer</td>
+<td style="text-align: left;">27.8B</td>
+<td style="text-align: left;">412 tokens</td>
+<td style="text-align: left;"><strong>50.94</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Surogate Rune</strong></td>
+<td style="text-align: left;">MoE hybrid classifier</td>
+<td style="text-align: left;">25.8B</td>
+<td style="text-align: left;">390 tokens</td>
+<td style="text-align: left;"><strong>47.23</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Decider Chat</strong></td>
+<td style="text-align: left;">Standard autoregressive chat LLM</td>
+<td style="text-align: left;">27.8B</td>
+<td style="text-align: left;">1,850 tokens</td>
+<td style="text-align: left;"><strong>46.08</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="figure-caption"><em>Table 3: Public Decision Index 0.2 benchmark results across 40 evaluation tasks. Scores are chance-corrected (0.0 represents uniform random guessing). Median latency for non-autoregressive decision models is 50–180ms compared to 1,200ms+ for conversational chat models.</em></div>
+<p>The data confirms a distinct shift: specialized non-autoregressive models routinely outperform multi-billion parameter chat models on structured reasoning and tool routing, while consuming a fraction of the token budget and compute energy.</p>
+<hr />
+<h2>The Architectural Mandate</h2>
+<p>A common question that arises when engineers first encounter Jev is: <em>Can Jev write the email response or summarize the document?</em></p>
+<p>The answer is emphatically no. Jev has no autoregressive text generator. It cannot draft an email, write an apology, or summarize an article into paragraphs. It is an evaluator, not a generator.</p>
+<p>For the past four years, the default pattern in AI engineering has been uniform: pass all inputs to a conversational LLM, instruct it to act as an agent, and parse its prose into software actions.</p>
+<p>This pattern is reaching its natural performance and cost limits. Generative language models are suited for synthesis, creative exploration, code generation, and human dialogue. They are ill-suited for dense classification, security guardrails, tool dispatch, and deterministic branching.</p>
+<p>Systems like Jev demonstrate that the future of agentic architecture is <strong>bimodal</strong>:</p>
+<ol>
+<li><strong>System 1 (Decision Models):</strong> Non-autoregressive, parallel, low-latency, and epistemically calibrated. They evaluate state, score risks, and route execution in tens of milliseconds. In production systems, Jev serves as the triage and gating layer that decides <em>if</em> a generative LLM needs to be invoked at all.</li>
+<li><strong>System 2 (Reasoning Models):</strong> Autoregressive, deliberate, and compute-intensive. They write code, generate long-form solutions, and synthesize complex multi-step reasoning when the System 1 layer decides it is strictly necessary.</li>
+</ol>
+<p>By untangling reflexive judgment from creative generation, software architectures regain what autoregressive prompting eroded: predictable latency, bounded failure modes, and mathematical calibration.</p>
+<hr />
+<h2>A Note on the Architecture Diagrams</h2>
+<p>TypeSafe AI has publicly confirmed that Jev is non-autoregressive, processes context in a single forward pass, and outputs typed primitives through specialized heads. The internal layer-level details shown in the diagrams — such as RoPE, SwiGLU, RMSNorm, and the cross-attention query pooling mechanism — are architectural inferences based on modern transformer conventions, not published specifications. TypeSafe has not disclosed the full internal design. The diagrams should be read as an illustrative reconstruction of how a model with Jev's confirmed behavior would plausibly be built, not as a reverse-engineered schematic.</p>
+<hr />
+<h2>References</h2>
+<ul>
+<li>Kahneman, D. (2011). <em>Thinking, Fast and Slow</em>. Farrar, Straus and Giroux.</li>
+<li>Vaswani, A., et al. (2017). <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>. <em>NeurIPS</em>.</li>
+<li>TypeSafe AI. (2026). <a href="https://docs.typesafe.ai/">Jev: System One Decision Primitives Documentation</a>.</li>
+<li>Nace AI. (2026). <a href="https://www.nace.ai/drex">Drex: Technical Announcement and Decision Index 0.2</a>.</li>
+<li>Arora, A. (2026). <a href="https://amaarora.github.io/posts/2026-19-09-jev-intro.html">Jev: A New Way to Make Probabilistic Decisions</a>.</li>
+<li>Hugging Face Community. (2026). <a href="https://huggingface.co/blog/sora-2/what-is-jev-ai-a-practical-guide-to-system-one-and">What Is Jev AI? A Practical Guide to System One and Executable Decisions</a>.</li>
+<li>Dao, T., et al. (2022). <a href="https://arxiv.org/abs/2205.14135">FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</a>. <em>NeurIPS</em>.</li>
+<li>Guo, C., Pleiss, G., Sun, Y., &amp; Weinberger, K. Q. (2017). <a href="https://arxiv.org/abs/1706.04599">On Calibration of Modern Neural Networks</a>. <em>ICML</em>.</li>
+</ul>
+    </div>
+
+    <footer class="article-footer">
+      <div>
+        Published by <strong>Sankalp Chudmunge</strong> • GitHub Pages
+      </div>
+      <div>
+        <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub Repository</a>
+      </div>
+    </footer>
+  </article>
+</main>
+
+<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+
+<script>
+  // Reading Progress Bar
+  window.addEventListener('scroll', () => {
+    const winScroll = document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (winScroll / height) * 100;
+    document.getElementById('progress-bar').style.width = scrolled + '%';
+
+    // Back to top toggle
+    const btt = document.getElementById('backToTop');
+    if (winScroll > 400) {
+      btt.classList.add('visible');
+    } else {
+      btt.classList.remove('visible');
+    }
+  });
+
+  document.getElementById('backToTop').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Theme Toggler with LocalStorage & System Preference
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeText = document.getElementById('themeText');
+
+  function initTheme() {
+    const saved = localStorage.getItem('articles_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeIcon.textContent = '☀️';
+      themeText.textContent = 'Light Mode';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      themeIcon.textContent = '🌙';
+      themeText.textContent = 'Dark Mode';
+    }
+  }
+  initTheme();
+
+  themeToggle.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('articles_theme', 'light');
+      themeIcon.textContent = '🌙';
+      themeText.textContent = 'Dark Mode';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('articles_theme', 'dark');
+      themeIcon.textContent = '☀️';
+      themeText.textContent = 'Light Mode';
+    }
+  });
+
+  // Code Copy Buttons
+  document.querySelectorAll('pre').forEach(pre => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block-wrapper';
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const btn = document.createElement('button');
+    btn.className = 'code-copy-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code') ? pre.querySelector('code').innerText : pre.innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    });
+    wrapper.appendChild(btn);
+  });
+
+  // Fix image paths for subdirectories & GitHub Pages
+  (function() {
+    const isGH = window.location.pathname.startsWith('/articles');
+    document.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && src.startsWith('/images/')) {
+        // Try relative to parent first
+        img.src = '../' + src.replace(/^\//, '');
+        img.onerror = function() {
+          this.onerror = null;
+          this.src = (isGH ? '/articles' : '') + src;
+        };
+      }
+    });
+  })();
+</script>
+</body>
+</html>
