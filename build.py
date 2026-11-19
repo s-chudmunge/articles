@@ -1490,11 +1490,6 @@ def generate_index_page(articles_meta):
 
 <div class="page-content">
   <div class="archive-wrapper">
-    <header class="archive-header">
-      <h1 class="archive-title">Articles</h1>
-      <p class="archive-description">Technical essays, research dissections, and systems architecture blueprints.</p>
-    </header>
-
     <ul class="post-list">
 {articles_list_html}
     </ul>
