@@ -1151,6 +1151,442 @@ def generate_sitemap_and_robots(articles_meta):
         f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n")
     print("✓ Generated: robots.txt")
 
+def generate_index_page(articles_meta):
+    items_html = []
+    for art in articles_meta:
+        title = art['title']
+        subtitle = art.get('subtitle', '')
+        slug = art['slug']
+        date = art.get('date', '')
+        subject = art.get('subject', 'Article')
+        excerpt = art.get('excerpt', '')
+        read_time = art.get('read_time', 5)
+        
+        subtitle_html = f'<p class="post-entry-subtitle">{subtitle}</p>' if subtitle else ''
+        
+        items_html.append(f"""        <li class="post-entry">
+          <div class="post-entry-meta">
+            <span>{date}</span>
+            <span class="separator">•</span>
+            <span class="post-category-tag">{subject}</span>
+            <span class="separator">•</span>
+            <span>{read_time} min read</span>
+          </div>
+          <h2 class="post-entry-title">
+            <a href="./{slug}/">{title}</a>
+          </h2>
+          {subtitle_html}
+          <p class="post-entry-excerpt">{excerpt}</p>
+        </li>""")
+
+    articles_list_html = "\\n".join(items_html)
+
+    index_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Articles - Sankalp Chudmunge</title>
+
+<!-- Primary SEO Meta Tags -->
+<meta name="title" content="Articles - Sankalp Chudmunge">
+<meta name="description" content="Technical essays, research dissections, and systems architecture blueprints by Sankalp Chudmunge.">
+<meta name="author" content="Sankalp Chudmunge">
+<link rel="canonical" href="{SITE_URL}/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sankalp Chudmunge">
+<meta property="og:url" content="{SITE_URL}/">
+<meta property="og:title" content="Articles - Sankalp Chudmunge">
+<meta property="og:description" content="Technical essays, research dissections, and systems architecture blueprints by Sankalp Chudmunge.">
+<meta property="og:image" content="{SITE_URL}/images/articles/jev-architecture-blueprint.png">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@csankalp21">
+<meta name="twitter:creator" content="@csankalp21">
+<meta name="twitter:url" content="{SITE_URL}/">
+<meta name="twitter:title" content="Articles - Sankalp Chudmunge">
+<meta name="twitter:description" content="Technical essays, research dissections, and systems architecture blueprints by Sankalp Chudmunge.">
+<meta name="twitter:image" content="{SITE_URL}/images/articles/jev-architecture-blueprint.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+<style>
+  :root {{
+    --bg-page: #ffffff;
+    --bg-card: #fdfdfd;
+    --text-main: #1f2328;
+    --text-muted: #59636e;
+    --border-color: #d0d7de;
+    --border-subtle: #eaeef2;
+    --link-color: #0969da;
+    --link-hover: #0550ae;
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --btn-bg: #f3f4f6;
+    --btn-text: #24292f;
+    --btn-border: #d0d7de;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: 'Newsreader', Georgia, Cambria, serif;
+    --font-body: var(--font-sans);
+  }}
+
+  [data-theme="dark"] {{
+    --bg-page: #0d1117;
+    --bg-card: #161b22;
+    --text-main: #c9d1d9;
+    --text-muted: #8b949e;
+    --border-color: #30363d;
+    --border-subtle: #21262d;
+    --link-color: #58a6ff;
+    --link-hover: #79b8ff;
+    --nav-bg: rgba(13, 17, 23, 0.95);
+    --btn-bg: #21262d;
+    --btn-text: #c9d1d9;
+    --btn-border: #363b42;
+  }}
+
+  [data-font="serif"] {{
+    --font-body: var(--font-serif);
+  }}
+
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  
+  body {{
+    font-family: var(--font-body);
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.7;
+    padding: 0 0 5rem 0;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }}
+
+  /* Fixed Academic Site Header (Al-Folio Style) */
+  .site-header {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--nav-bg);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 50;
+    height: 56px;
+    display: flex;
+    align-items: center;
+  }}
+
+  .header-wrapper {{
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }}
+
+  a.site-title {{
+    font-family: var(--font-sans);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--text-main);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }}
+  a.site-title strong {{
+    font-weight: 700;
+  }}
+
+  .site-nav {{
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+  }}
+  .site-nav a {{
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: color 0.15s;
+  }}
+  .site-nav a:hover {{
+    color: var(--link-color);
+  }}
+
+  .control-btn {{
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s;
+  }}
+  .control-btn:hover {{
+    border-color: var(--link-color);
+  }}
+
+  /* Content Wrapper */
+  .page-content {{
+    padding-top: 6rem;
+  }}
+
+  .archive-wrapper {{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 25px;
+  }}
+
+  .archive-header {{
+    margin-bottom: 2.75rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }}
+
+  .archive-title {{
+    font-family: var(--font-sans);
+    font-size: clamp(2.2rem, 4vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-main);
+    margin-bottom: 0.4rem;
+  }}
+
+  .archive-description {{
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }}
+
+  .post-list {{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }}
+
+  .post-entry {{
+    margin-bottom: 2.5rem;
+    padding-bottom: 2.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }}
+  .post-entry:last-child {{
+    border-bottom: none;
+  }}
+
+  .post-entry-meta {{
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+  }}
+  .post-entry-meta span.separator {{
+    opacity: 0.4;
+  }}
+  .post-category-tag {{
+    color: var(--link-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.775rem;
+    letter-spacing: 0.05em;
+  }}
+
+  .post-entry-title {{
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.35rem 0;
+  }}
+  .post-entry-title a {{
+    color: var(--text-main);
+    text-decoration: none;
+    transition: color 0.15s;
+  }}
+  .post-entry-title a:hover {{
+    color: var(--link-color);
+    text-decoration: underline;
+  }}
+
+  .post-entry-subtitle {{
+    font-family: var(--font-sans);
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    margin: 0 0 0.65rem 0;
+    line-height: 1.4;
+  }}
+
+  .post-entry-excerpt {{
+    font-size: 0.975rem;
+    color: var(--text-main);
+    line-height: 1.6;
+    margin: 0;
+  }}
+
+  /* Footer */
+  .archive-footer {{
+    margin-top: 3.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border-color);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+  }}
+  .archive-footer a {{
+    color: var(--link-color);
+    text-decoration: none;
+  }}
+  .archive-footer a:hover {{
+    text-decoration: underline;
+  }}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-wrapper">
+    <a href="./" class="site-title">
+      <strong>Sankalp</strong> Chudmunge
+    </a>
+    <nav class="site-nav">
+      <a href="https://x.com/csankalp21" target="_blank" rel="noopener">X</a>
+      <a href="https://github.com/s-chudmunge" target="_blank" rel="noopener">GitHub</a>
+      <button id="fontToggle" class="control-btn" aria-label="Toggle serif / sans font">
+        <span id="fontIcon">📖</span>
+        <span id="fontText">Serif</span>
+      </button>
+      <button id="themeToggle" class="control-btn" aria-label="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<div class="page-content">
+  <div class="archive-wrapper">
+    <header class="archive-header">
+      <h1 class="archive-title">Articles</h1>
+      <p class="archive-description">Technical essays, research dissections, and systems architecture blueprints.</p>
+    </header>
+
+    <ul class="post-list">
+{articles_list_html}
+    </ul>
+
+    <footer class="archive-footer">
+      <div>
+        Published by <strong><a href="https://x.com/csankalp21" target="_blank" rel="noopener">Sankalp Chudmunge</a></strong> (<a href="https://x.com/csankalp21" target="_blank" rel="noopener">@csankalp21</a>) • <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div>
+        <a href="#top" onclick="window.scrollTo({{ top: 0, behavior: 'smooth' }}); return false;">Back to top ↑</a>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // Theme Toggler
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeText = document.getElementById('themeText');
+
+  function initTheme() {{
+    const savedTheme = localStorage.getItem('articles_theme');
+    if (savedTheme) {{
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeUI(savedTheme === 'dark');
+    }} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {{
+      document.documentElement.setAttribute('data-theme', 'dark');
+      updateThemeUI(true);
+    }}
+  }}
+
+  function updateThemeUI(isDark) {{
+    themeIcon.textContent = isDark ? '☀️' : '🌙';
+    themeText.textContent = isDark ? 'Light' : 'Dark';
+  }}
+  initTheme();
+
+  themeToggle.addEventListener('click', () => {{
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    if (currentTheme === 'dark') {{
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('articles_theme', 'light');
+      updateThemeUI(false);
+    }} else {{
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('articles_theme', 'dark');
+      updateThemeUI(true);
+    }}
+  }});
+
+  // Font Switcher (Serif / Sans)
+  const fontToggle = document.getElementById('fontToggle');
+  const fontIcon = document.getElementById('fontIcon');
+  const fontText = document.getElementById('fontText');
+
+  function initFont() {{
+    const savedFont = localStorage.getItem('articles_font');
+    if (savedFont === 'serif') {{
+      document.documentElement.setAttribute('data-font', 'serif');
+      fontIcon.textContent = '🔤';
+      fontText.textContent = 'Sans';
+    }} else {{
+      document.documentElement.removeAttribute('data-font');
+      fontIcon.textContent = '📖';
+      fontText.textContent = 'Serif';
+    }}
+  }}
+  initFont();
+
+  fontToggle.addEventListener('click', () => {{
+    const isSerif = document.documentElement.getAttribute('data-font') === 'serif';
+    if (isSerif) {{
+      document.documentElement.removeAttribute('data-font');
+      localStorage.setItem('articles_font', 'sans');
+      fontIcon.textContent = '📖';
+      fontText.textContent = 'Serif';
+    }} else {{
+      document.documentElement.setAttribute('data-font', 'serif');
+      localStorage.setItem('articles_font', 'serif');
+      fontIcon.textContent = '🔤';
+      fontText.textContent = 'Sans';
+    }}
+  }});
+</script>
+</body>
+</html>
+"""
+    with open(os.path.join(PROJECT_DIR, 'index.html'), 'w', encoding='utf-8') as f:
+        f.write(index_html)
+    print("✓ Generated articles index: index.html")
+
 def build_all():
     md_files = [f for f in os.listdir(PROJECT_DIR) if f.endswith('.md') and f.lower() != 'readme.md']
     print(f"Found {len(md_files)} article(s) to compile.")
@@ -1187,33 +1623,17 @@ def build_all():
 
         articles_meta.append({
             'title': title,
+            'subtitle': frontmatter.get('subtitle', ''),
             'slug': slug,
             'date': frontmatter.get('date', ''),
             'subject': frontmatter.get('subject', 'Article'),
             'excerpt': frontmatter.get('excerpt', ''),
-            'heroImage': frontmatter.get('heroImage', '')
+            'heroImage': frontmatter.get('heroImage', ''),
+            'read_time': estimate_read_time(raw_body)
         })
 
     generate_sitemap_and_robots(articles_meta)
-
-    # Clean minimal redirect at root
-    if articles_meta:
-        first_article = articles_meta[0]
-        root_index = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=./{first_article['slug']}/">
-<title>Articles - Sankalp Chudmunge</title>
-<script>window.location.href = "./{first_article['slug']}/";</script>
-</head>
-<body style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">
-<p>Redirecting to <a href="./{first_article['slug']}/">{first_article['title']}</a>...</p>
-</body>
-</html>"""
-        with open(os.path.join(PROJECT_DIR, 'index.html'), 'w', encoding='utf-8') as f:
-            f.write(root_index)
-        print("✓ Generated root redirect index.html")
+    generate_index_page(articles_meta)
 
 if __name__ == '__main__':
     build_all()
