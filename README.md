@@ -1,4 +1,4 @@
-# Sankalp Chudmunge — Technical Articles
+# Sankalp Chudmunge: Technical Articles
 
 Personal research essays and engineering breakdowns published directly to GitHub Pages.
 
