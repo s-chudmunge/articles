@@ -823,6 +823,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   // Fix image paths
   (function() {{
     const isGH = window.location.pathname.startsWith('/articles');
+    document.querySelectorAll('picture source').forEach(srcEl => {{
+      const srcset = srcEl.getAttribute('srcset');
+      if (srcset && srcset.startsWith('/images/')) {{
+        srcEl.srcset = '../' + srcset.replace(/^\\//, '');
+      }}
+    }});
     document.querySelectorAll('img').forEach(img => {{
       const src = img.getAttribute('src');
       if (src && src.startsWith('/images/')) {{
@@ -1022,7 +1028,13 @@ def build_article_html(frontmatter, body_html, raw_body):
     rel_hero = hero_image.lstrip('/')
     hero_section = ""
     if hero_image:
-        hero_section = f'<div class="img_row"><img src="../{rel_hero}" alt="{title}"></div>'
+        rel_hero_webp = os.path.splitext(rel_hero)[0] + '.webp'
+        hero_section = f'''<div class="img_row">
+  <picture>
+    <source srcset="../{rel_hero_webp}" type="image/webp">
+    <img src="../{rel_hero}" alt="{title}" fetchpriority="high">
+  </picture>
+</div>'''
 
     # Academic blockquote style for overview/insight
     insight_section = ""
@@ -1035,11 +1047,24 @@ def build_article_html(frontmatter, body_html, raw_body):
     # Rewrite /images/ to ../images/ in body_html
     body_html = re.sub(r'src="/images/', r'src="../images/', body_html)
 
+    def wrap_picture(img_html, is_lazy=True):
+        src_match = re.search(r'src="([^"]+)"', img_html)
+        if src_match:
+            src = src_match.group(1)
+            if src.endswith('.png'):
+                webp_src = src.rsplit('.', 1)[0] + '.webp'
+                lazy_attr = ' loading="lazy" decoding="async"' if is_lazy else ''
+                if 'loading=' not in img_html:
+                    img_html = img_html.replace('<img ', f'<img{lazy_attr} ')
+                return f'<picture><source srcset="{webp_src}" type="image/webp">{img_html}</picture>'
+        return img_html
+
     # Wrap figures in academic .img_row and .caption
     def figure_repl(m):
         img_tag = m.group(1)
         caption_text = m.group(2)
-        return f'<div class="img_row">{img_tag}</div>\n<div class="caption">{caption_text}</div>'
+        pic = wrap_picture(img_tag, is_lazy=True)
+        return f'<div class="img_row">{pic}</div>\n<div class="caption">{caption_text}</div>'
 
     body_html = re.sub(
         r'<p>(<img\s+[^>]+>)</p>\s*<p>(<em>(?:Figure)\s+\d+:.*?</em>)</p>',
@@ -1048,7 +1073,12 @@ def build_article_html(frontmatter, body_html, raw_body):
     )
 
     # Wrap any standalone image paragraph in .img_row
-    body_html = re.sub(r'<p>(<img\s+[^>]+>)</p>', r'<div class="img_row">\1</div>', body_html)
+    def standalone_img_repl(m):
+        img_tag = m.group(1)
+        pic = wrap_picture(img_tag, is_lazy=True)
+        return f'<div class="img_row">{pic}</div>'
+
+    body_html = re.sub(r'<p>(<img\s+[^>]+>)</p>', standalone_img_repl, body_html)
 
     # Add IDs to headings
     body_html = extract_headings_and_add_ids(body_html)

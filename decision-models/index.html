@@ -747,7 +747,12 @@
           <p><strong>Overview:</strong> Decision models replace autoregressive next-token decoding with parallel forward evaluation over a shared context state. Rather than generating JSON strings sequentially, learned classification heads compute calibrated probability distributions across typed primitives in a single pass.</p>
         </blockquote>
 
-      <div class="img_row"><img src="../images/articles/jev-architecture-blueprint.png" alt="What are Decision Models?"></div>
+      <div class="img_row">
+  <picture>
+    <source srcset="../images/articles/jev-architecture-blueprint.webp" type="image/webp">
+    <img src="../images/articles/jev-architecture-blueprint.png" alt="What are Decision Models?" fetchpriority="high">
+  </picture>
+</div>
 
       <article class="post-content">
         <p>When an autonomous agent needs to decide whether to run a database query, or a support system routes an incoming ticket, standard engineering practice today involves prompting a large autoregressive language model. The model receives a prompt, enters an autoregressive loop, generates tokens one by one, formats them into a JSON string, and sends that text across the network. The application then parses that JSON, validates the schema with a library like Pydantic, catches formatting errors, and extracts a single enum value or boolean flag.</p>
@@ -763,7 +768,7 @@
 <p><strong>System 2:</strong> Slow, deliberate, sequential, and computationally expensive. It allocates effortful mental focus, like calculating $17 \times 24$ in your head or composing a detailed legal brief.</p>
 </li>
 </ul>
-<div class="img_row"><img alt="Daniel Kahneman's dual-process cognitive architecture: System 1 (fast, reflexive pattern evaluation) and System 2 (deliberate, sequential reasoning)" src="../images/articles/kahneman-dual-system-overview.png" /></div>
+<div class="img_row"><picture><source srcset="../images/articles/kahneman-dual-system-overview.webp" type="image/webp"><img loading="lazy" decoding="async" alt="Daniel Kahneman's dual-process cognitive architecture: System 1 (fast, reflexive pattern evaluation) and System 2 (deliberate, sequential reasoning)" src="../images/articles/kahneman-dual-system-overview.png" /></picture></div>
 <p>In modern AI architectures, autoregressive models (like GPT-4, Claude, or reasoning models like o1) are System 2: they deliberate sequentially, generating token after token in an internal monologue. Jev is the missing <strong>System 1</strong>: an instant, non-generative, parallel reflex arc that evaluates state and renders calibrated judgment in tens of milliseconds.</p>
 <div class="tweet-container"><blockquote class="twitter-tweet" data-dnt="true"><a href="https://twitter.com/x/status/2099925682726002904"></a></blockquote></div>
 
@@ -920,7 +925,7 @@ $$</p>
 </ul>
 <hr />
 <h2 id="jev-architecture"><a href="#jev-architecture" class="heading-anchor" aria-hidden="true">#</a>Jev Architecture</h2>
-<div class="img_row"><img alt="The Jev System One Decision Architecture: A bidirectional transformer encoder stack paired with parallel cross-attention decision query projections and typed probabilistic output heads" src="../images/articles/jev-architecture-blueprint.png" /></div>
+<div class="img_row"><picture><source srcset="../images/articles/jev-architecture-blueprint.webp" type="image/webp"><img loading="lazy" decoding="async" alt="The Jev System One Decision Architecture: A bidirectional transformer encoder stack paired with parallel cross-attention decision query projections and typed probabilistic output heads" src="../images/articles/jev-architecture-blueprint.png" /></picture></div>
 <div class="caption"><em>Figure 1: The Jev System One Decision Architecture. Unlike causal generative decoders, Jev processes the shared state context through a bidirectional encoder stack with FlashAttention. Multiple typed queries (Noul, Choice, Score) attend to the contextualized memory in parallel, projecting into specialized, calibrated output heads in a single forward pass.</em></div>
 <div class="loom-container"><iframe src="https://www.loom.com/embed/18c4dbcf8db546dfb2d7f2ef018e78e4" allowfullscreen></iframe></div>
 
@@ -1007,7 +1012,7 @@ $$</p>
 <p>RLHF is effective for making conversational agents polite, organized, and articulate. But RLHF is actively harmful for probabilistic decision-making. </p>
 <p>Why? Because RLHF introduces an <strong>overconfidence bias</strong>. If a human asks an LLM a difficult question and the model responds with total confidence (<em>"The capital of Australia is Canberra with 100% certainty"</em>), human raters reward it. If the model honestly says <em>"I am 52% sure it is Canberra and 48% sure it is Sydney"</em>, human raters tend to penalize it as hesitant or unhelpful. Over hundreds of thousands of RLHF iterations, models learn to sound confident even when they are guessing.</p>
 <p>To prevent this, TypeSafe trained Jev using <strong>RLCD (Reinforcement Learning for Calibrated Decisions)</strong>.</p>
-<div class="img_row"><img alt="Reinforcement Learning for Calibrated Decisions (RLCD): Epistemic calibration loop optimizing strictly proper scoring rules and ECE penalties" src="../images/articles/rlcd-calibration-pipeline.png" /></div>
+<div class="img_row"><picture><source srcset="../images/articles/rlcd-calibration-pipeline.webp" type="image/webp"><img loading="lazy" decoding="async" alt="Reinforcement Learning for Calibrated Decisions (RLCD): Epistemic calibration loop optimizing strictly proper scoring rules and ECE penalties" src="../images/articles/rlcd-calibration-pipeline.png" /></picture></div>
 <div class="caption"><em>Figure 2: The RLCD Training Loop. Unlike RLHF which optimizes for human preference, RLCD evaluates predicted decision probabilities against deterministic ground-truth verification oracles. The loss optimizes strictly proper scoring rules (Brier loss) while penalizing Expected Calibration Error (ECE) to enforce mathematical confidence bounds.</em></div>
 <h3 id="ground-truth-without-human-raters"><a href="#ground-truth-without-human-raters" class="heading-anchor" aria-hidden="true">#</a>Ground Truth Without Human Raters</h3>
 <p>A fundamental question in training a decision model is: <em>Where does the ground-truth target $y^*$ come from if we eliminate human raters?</em></p>
@@ -1297,6 +1302,12 @@ $$</p>
   // Fix image paths
   (function() {
     const isGH = window.location.pathname.startsWith('/articles');
+    document.querySelectorAll('picture source').forEach(srcEl => {
+      const srcset = srcEl.getAttribute('srcset');
+      if (srcset && srcset.startsWith('/images/')) {
+        srcEl.srcset = '../' + srcset.replace(/^\//, '');
+      }
+    });
     document.querySelectorAll('img').forEach(img => {
       const src = img.getAttribute('src');
       if (src && src.startsWith('/images/')) {
