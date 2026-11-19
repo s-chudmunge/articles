@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Static site generator for s-chudmunge/articles GitHub Pages.
-Generates search-engine optimized, typography-first, magazine-grade HTML articles
-matching the design philosophy of fep-papers-archive and setr-papers-archive.
+Generates an academic-grade, typography-first reading experience inspired by
+Zongyi Li's research blog (al-folio academic jekyll style).
 """
 
 import os
@@ -18,8 +18,8 @@ SITE_URL = "https://s-chudmunge.github.io/articles"
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title} | Sankalp Chudmunge</title>
 
 <!-- Primary SEO Meta Tags -->
@@ -32,7 +32,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="Sankalp Chudmunge — Research & Articles">
+<meta property="og:site_name" content="Sankalp Chudmunge">
 <meta property="og:url" content="{canonical_url}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{excerpt}">
@@ -40,7 +40,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="article:published_time" content="{published_iso}">
-<meta property="article:modified_time" content="{published_iso}">
 <meta property="article:author" content="https://github.com/s-chudmunge">
 <meta property="article:section" content="{subject}">
 
@@ -53,17 +52,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta name="twitter:description" content="{excerpt}">
 <meta name="twitter:image" content="{og_image}">
 
-<!-- Schema.org JSON-LD Structured Data for Search Engine Rich Snippets -->
+<!-- Schema.org JSON-LD Structured Data -->
 <script type="application/ld+json">
 {schema_json}
 </script>
 
-<!-- Google Fonts: Newsreader (Editorial Serif), Plus Jakarta Sans (Modern Geometric Sans), JetBrains Mono (Code) -->
+<!-- Clean Academic Typography Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap" rel="stylesheet">
 
-<!-- KaTeX for Fast & Pristine LaTeX Math Rendering -->
+<!-- KaTeX for High-Precision LaTeX Math Rendering -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
@@ -80,66 +79,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <style>
   :root {{
-    /* Eye-Comfort Warm Paper Palette (Light Mode) */
-    --bg-page: #fdfcfb;
-    --bg-card: #ffffff;
-    --text-main: #181a1f;
-    --text-muted: #57606a;
-    --border-color: #e5e7eb;
+    /* Al-Folio Academic Theme Colors (Light Mode) */
+    --bg-page: #ffffff;
+    --bg-card: #f8f9fa;
+    --text-main: #24292f;
+    --text-muted: #6e7781;
+    --border-color: #e8e8e8;
     --border-subtle: #f0f2f5;
-    --btn-bg: #f3f4f6;
-    --btn-text: #374151;
-    --btn-border: #d1d5db;
-    --link-color: #1d4ed8;
-    --link-hover: #1e40af;
+    --link-color: #00369f;
+    --link-hover: #002266;
     --code-bg: #f6f8fa;
     --code-border: #e1e4e8;
-    --callout-bg: #f0f7ff;
-    --callout-border: #2563eb;
-    --callout-text: #1e3a8a;
-    --table-header: #f8fafc;
-    --table-row-hover: #f8fafc;
-    --tag-bg: #eff6ff;
-    --tag-text: #1d4ed8;
-    --tag-border: #bfdbfe;
-    --accent-glow: rgba(37, 99, 235, 0.08);
-
-    /* Typography font variable */
-    --font-prose: 'Newsreader', Georgia, Cambria, serif;
-    --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-ui: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+    --quote-bg: #f8f9fb;
+    --quote-border: #00369f;
+    --table-header: #f6f8fa;
+    --table-hover: #f9fafb;
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --btn-bg: #f3f4f6;
+    --btn-text: #24292f;
+    --btn-border: #d0d7de;
+    
+    /* Academic Typography */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: 'Newsreader', Georgia, Cambria, serif;
+    --font-mono: 'JetBrains Mono', "Source Code Pro", Consolas, monospace;
+    --font-body: var(--font-sans);
   }}
 
   [data-theme="dark"] {{
-    /* Deep Slate / Zinc OLED-friendly Dark Palette */
+    /* High-Contrast Academic Dark Mode */
     --bg-page: #0d1117;
     --bg-card: #161b22;
-    --text-main: #e6edf3;
+    --text-main: #c9d1d9;
     --text-muted: #8b949e;
     --border-color: #30363d;
     --border-subtle: #21262d;
-    --btn-bg: #21262d;
-    --btn-text: #c9d1d9;
-    --btn-border: #363b42;
     --link-color: #58a6ff;
     --link-hover: #79b8ff;
     --code-bg: #161b22;
     --code-border: #30363d;
-    --callout-bg: rgba(56, 189, 248, 0.08);
-    --callout-border: #38bdf8;
-    --callout-text: #bae6fd;
-    --table-header: #131820;
-    --table-row-hover: #1c2129;
-    --tag-bg: rgba(56, 189, 248, 0.12);
-    --tag-text: #7dd3fc;
-    --tag-border: rgba(56, 189, 248, 0.28);
-    --accent-glow: rgba(56, 189, 248, 0.1);
+    --quote-bg: #131922;
+    --quote-border: #388bfd;
+    --table-header: #161b22;
+    --table-hover: #1c2129;
+    --nav-bg: rgba(13, 17, 23, 0.95);
+    --btn-bg: #21262d;
+    --btn-text: #c9d1d9;
+    --btn-border: #363b42;
   }}
 
-  /* Font Switcher Preference */
-  [data-font="sans"] {{
-    --font-prose: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* Font Mode Switcher */
+  [data-font="serif"] {{
+    --font-body: var(--font-serif);
   }}
 
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
@@ -150,78 +141,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
 
   body {{
-    font-family: var(--font-prose);
+    font-family: var(--font-body);
     background-color: var(--bg-page);
     color: var(--text-main);
-    line-height: 1.82;
-    padding: 0 1.25rem 6rem 1.25rem;
+    line-height: 1.75;
+    padding: 0 0 5rem 0;
     transition: background-color 0.25s ease, color 0.25s ease;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }}
-
-  /* Top Navigation Bar */
-  .top-nav-wrapper {{
-    position: sticky;
-    top: 0;
-    background: var(--bg-page);
-    background: color-mix(in srgb, var(--bg-page) 88%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    z-index: 90;
-    border-bottom: 1px solid var(--border-color);
-    margin: 0 -1.25rem 2.5rem -1.25rem;
-    padding: 0 1.25rem;
-  }}
-
-  .top-nav {{
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 0.95rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }}
-
-  .nav-brand {{
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    font-family: var(--font-ui);
-    font-size: 0.925rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color 0.15s;
-  }}
-  .nav-brand:hover {{ color: var(--link-color); }}
-  .nav-brand span.author-name {{ color: var(--text-main); font-weight: 700; }}
-
-  .nav-controls {{
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }}
-
-  .pill-control {{
-    background: var(--btn-bg);
-    border: 1px solid var(--btn-border);
-    color: var(--btn-text);
-    padding: 0.35rem 0.75rem;
-    border-radius: 9999px;
-    cursor: pointer;
-    font-family: var(--font-ui);
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    transition: all 0.15s;
-  }}
-  .pill-control:hover {{
-    opacity: 0.9;
-    border-color: var(--link-color);
   }}
 
   /* Reading Progress Bar */
@@ -230,159 +157,176 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--link-color), #8b5cf6);
+    background: var(--link-color);
     width: 0%;
     z-index: 100;
     transition: width 0.08s ease-out;
   }}
 
-  /* Page Layout Grid with Sticky TOC on Desktop */
-  .layout-grid {{
-    max-width: 1080px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 740px) 260px;
-    gap: 4.5rem;
-    align-items: start;
-    justify-content: center;
-  }}
-
-  @media (max-width: 1080px) {{
-    .layout-grid {{
-      grid-template-columns: minmax(0, 740px);
-      gap: 0;
-    }}
-    .toc-sidebar {{
-      display: none !important;
-    }}
-  }}
-
-  /* Main Article Column */
-  .article-main {{
+  /* Fixed Academic Site Header (Al-Folio Style) */
+  .site-header {{
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 740px;
+    background-color: var(--nav-bg);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 50;
+    height: 56px;
   }}
 
-  /* Header Section */
-  .article-header {{
-    margin-bottom: 2rem;
+  .header-wrapper {{
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
   }}
 
-  .badge-subject {{
+  .site-title {{
+    font-family: var(--font-sans);
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--text-main);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }}
+  .site-title strong {{
+    font-weight: 700;
+    color: var(--text-main);
+  }}
+
+  .site-nav {{
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }}
+
+  .site-nav a {{
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.15s;
+  }}
+  .site-nav a:hover {{
+    color: var(--link-color);
+  }}
+
+  .control-btn {{
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--btn-text);
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s;
+  }}
+  .control-btn:hover {{
+    border-color: var(--link-color);
+  }}
+
+  /* Content Wrapper: Exact Al-Folio 740px Reading Measure */
+  .page-content {{
+    padding-top: 5.5rem;
+  }}
+
+  .post-wrapper {{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 25px;
+  }}
+
+  /* Post Header */
+  .post-header {{
+    margin-bottom: 2.25rem;
+  }}
+
+  .post-category {{
     display: inline-block;
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    border: 1px solid var(--tag-border);
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-family: var(--font-ui);
-    font-size: 0.75rem;
+    color: var(--link-color);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
   }}
 
-  h1.article-title {{
-    font-family: var(--font-heading);
-    font-size: clamp(2.25rem, 4.4vw, 2.95rem);
+  h1.post-title {{
+    font-family: var(--font-sans);
+    font-size: clamp(2.15rem, 4.2vw, 2.75rem);
     font-weight: 800;
-    line-height: 1.18;
+    line-height: 1.2;
     letter-spacing: -0.03em;
     color: var(--text-main);
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.85rem;
   }}
 
-  .article-meta {{
+  .post-meta {{
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.925rem;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1.25rem;
-    color: var(--text-muted);
-    font-family: var(--font-ui);
-    font-size: 0.9rem;
-    padding-bottom: 1.75rem;
+    gap: 0.5rem;
+    padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--border-color);
   }}
-  .article-meta span {{ display: inline-flex; align-items: center; gap: 0.35rem; }}
-
-  /* Hero Image */
-  .hero-image-wrapper {{
-    margin: 2.25rem 0;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-    background: var(--bg-card);
-    box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.08);
-  }}
-  .hero-image-wrapper img {{
-    width: 100%;
-    height: auto;
-    display: block;
+  .post-meta span.separator {{
+    opacity: 0.4;
   }}
 
-  /* Technical Insight Callout Box */
-  .insight-box {{
-    background: var(--callout-bg);
-    border-left: 4px solid var(--callout-border);
-    border-radius: 0 10px 10px 0;
-    padding: 1.45rem 1.85rem;
-    margin: 2.5rem 0;
-    box-shadow: 0 2px 10px -2px var(--accent-glow);
-  }}
-  .insight-title {{
-    font-family: var(--font-ui);
-    font-size: 0.825rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--callout-border);
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-  }}
-  .insight-text {{
-    font-size: 1.05rem;
-    line-height: 1.7;
+  /* Post Content Typography */
+  .post-content {{
+    font-size: 1.125rem;
+    line-height: 1.82;
     color: var(--text-main);
   }}
 
-  /* Article Content Typography */
-  .article-content {{
-    font-size: 1.15rem;
-    color: var(--text-main);
+  .post-content p {{
+    margin: 1.5rem 0;
   }}
 
-  .article-content p {{
-    margin: 1.65rem 0;
-  }}
-
-  .article-content h2 {{
-    font-family: var(--font-heading);
-    font-size: 1.95rem;
+  .post-content h2 {{
+    font-family: var(--font-sans);
+    font-size: 1.85rem;
     font-weight: 800;
-    letter-spacing: -0.025em;
-    margin: 3.75rem 0 1.25rem 0;
-    padding-bottom: 0.65rem;
+    letter-spacing: -0.02em;
+    margin-top: 3.5rem;
+    margin-bottom: 1.15rem;
+    padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--border-color);
-    line-height: 1.28;
+    line-height: 1.3;
     position: relative;
   }}
 
-  .article-content h3 {{
-    font-family: var(--font-heading);
-    font-size: 1.4rem;
+  .post-content h3 {{
+    font-family: var(--font-sans);
+    font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: -0.015em;
-    margin: 2.75rem 0 0.85rem 0;
+    margin-top: 2.5rem;
+    margin-bottom: 0.85rem;
     line-height: 1.35;
     position: relative;
   }}
 
   .heading-anchor {{
     position: absolute;
-    left: -1.4rem;
+    left: -1.35rem;
     top: 0;
     color: var(--text-muted);
     text-decoration: none;
@@ -398,47 +342,54 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     color: var(--link-color);
   }}
 
-  .article-content ul, .article-content ol {{
-    margin: 1.4rem 0 1.4rem 1.85rem;
+  .post-content ul, .post-content ol {{
+    margin: 1.35rem 0 1.35rem 1.75rem;
   }}
-  .article-content li {{
-    margin-bottom: 0.6rem;
+  .post-content li {{
+    margin-bottom: 0.55rem;
   }}
 
-  .article-content a {{
+  .post-content a {{
     color: var(--link-color);
     text-decoration: underline;
     text-underline-offset: 3px;
     transition: color 0.15s;
   }}
-  .article-content a:hover {{
+  .post-content a:hover {{
     color: var(--link-hover);
   }}
 
-  .article-content strong {{
+  .post-content strong {{
     font-weight: 700;
   }}
 
-  .article-content hr {{
+  .post-content hr {{
     border: none;
     border-top: 1px solid var(--border-color);
-    margin: 3.75rem 0;
+    margin: 3.5rem 0;
   }}
 
-  .article-content blockquote {{
-    border-left: 3px solid var(--callout-border);
-    background: var(--callout-bg);
-    padding: 0.95rem 1.4rem;
+  /* Academic Blockquote Style (Al-Folio) */
+  .post-content blockquote {{
+    border-left: 3px solid var(--quote-border);
+    background-color: var(--quote-bg);
+    padding: 1.15rem 1.5rem;
     margin: 2rem 0;
     border-radius: 0 8px 8px 0;
+    font-size: 1.05rem;
+    line-height: 1.7;
     color: var(--text-main);
-    font-style: normal;
   }}
+  .post-content blockquote p {{
+    margin: 0.5rem 0;
+  }}
+  .post-content blockquote p:first-child {{ margin-top: 0; }}
+  .post-content blockquote p:last-child {{ margin-bottom: 0; }}
 
   /* Inline Code */
-  .article-content :not(pre) > code {{
+  .post-content :not(pre) > code {{
     font-family: var(--font-mono);
-    font-size: 0.86em;
+    font-size: 0.88em;
     background: var(--code-bg);
     border: 1px solid var(--code-border);
     padding: 0.15rem 0.4rem;
@@ -446,7 +397,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     color: var(--text-main);
   }}
 
-  /* Code Block Container with Language Badge & Copy Button */
+  /* Code Blocks */
   .code-block-wrapper {{
     position: relative;
     margin: 2rem 0;
@@ -461,7 +412,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     padding: 0.25rem 0.65rem;
     border-radius: 5px;
     font-size: 0.75rem;
-    font-family: var(--font-ui);
+    font-family: var(--font-sans);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s;
@@ -472,15 +423,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     color: #ffffff;
   }}
 
-  .article-content pre {{
+  .post-content pre {{
     background: #0f141c !important;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 1.35rem !important;
     overflow-x: auto;
-    box-shadow: 0 4px 20px -3px rgba(0, 0, 0, 0.12);
   }}
-  .article-content pre code {{
+  .post-content pre code {{
     font-family: var(--font-mono);
     font-size: 0.925rem;
     line-height: 1.65;
@@ -490,50 +440,47 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     color: #f1f5f9;
   }}
 
-  /* Content Images */
-  .article-content img {{
+  /* Academic Figure Layout (.img_row and .caption matching Zongyi Li) */
+  .img_row {{
+    margin: 2.5rem 0 0.5rem 0;
+    text-align: center;
+  }}
+  .img_row img {{
     max-width: 100%;
     height: auto;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    display: block;
-    margin: 2.5rem auto 0.85rem auto;
-    box-shadow: 0 6px 25px -4px rgba(0, 0, 0, 0.08);
+    display: inline-block;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
   }}
-  
-  .figure-caption {{
-    display: block;
+  .caption {{
     text-align: center;
     color: var(--text-muted);
-    font-family: var(--font-ui);
-    font-size: 0.875rem;
-    margin-top: 0.65rem;
-    margin-bottom: 2.25rem;
-    font-style: italic;
+    font-family: var(--font-sans);
+    font-size: 0.885rem;
     line-height: 1.55;
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
+    font-style: italic;
+    margin-bottom: 2.25rem;
+    padding: 0 1rem;
   }}
 
-  /* Tables */
+  /* Academic Tables */
   .table-wrapper {{
     width: 100%;
     overflow-x: auto;
-    margin: 2.5rem 0;
+    margin: 2.25rem 0;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 8px;
     background: var(--bg-card);
-    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.04);
   }}
   table {{
     width: 100%;
     border-collapse: collapse;
-    font-family: var(--font-ui);
+    font-family: var(--font-sans);
     font-size: 0.925rem;
   }}
   th, td {{
-    padding: 0.95rem 1.25rem;
+    padding: 0.85rem 1.15rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
     vertical-align: top;
@@ -550,20 +497,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     border-bottom: none;
   }}
   tr:hover td {{
-    background: var(--table-row-hover);
+    background: var(--table-hover);
   }}
 
   /* Embedded Loom Video */
   .loom-container {{
     position: relative;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    padding-bottom: 56.25%;
     height: 0;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    margin: 2.75rem 0;
+    margin: 2.5rem 0;
     background: var(--bg-card);
-    box-shadow: 0 6px 20px -3px rgba(0, 0, 0, 0.08);
   }}
   .loom-container iframe {{
     position: absolute;
@@ -576,77 +522,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   /* Embedded Tweet */
   .tweet-container {{
-    margin: 2.75rem 0;
+    margin: 2.5rem 0;
     display: flex;
     justify-content: center;
   }}
 
-  /* Sticky Table of Contents (TOC) Sidebar on Desktop */
-  .toc-sidebar {{
-    position: sticky;
-    top: 5rem;
-    max-height: calc(100vh - 6rem);
-    overflow-y: auto;
-    padding-left: 1.5rem;
-    border-left: 1px solid var(--border-color);
-    font-family: var(--font-ui);
-  }}
-  .toc-title {{
-    font-size: 0.775rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    margin-bottom: 0.95rem;
-  }}
-  .toc-list {{
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }}
-  .toc-item {{
-    margin-bottom: 0.55rem;
-    font-size: 0.85rem;
-    line-height: 1.4;
-  }}
-  .toc-item.h3 {{
-    padding-left: 0.85rem;
-    font-size: 0.8rem;
-  }}
-  .toc-link {{
-    color: var(--text-muted);
-    text-decoration: none;
-    display: block;
-    transition: color 0.15s, transform 0.15s;
-  }}
-  .toc-link:hover {{
-    color: var(--link-color);
-    transform: translateX(2px);
-  }}
-  .toc-link.active {{
-    color: var(--link-color);
-    font-weight: 700;
-  }}
-
-  /* Article Footer */
-  .article-footer {{
-    margin-top: 5rem;
-    padding-top: 2.25rem;
+  /* Post Footer */
+  .post-footer {{
+    margin-top: 4.5rem;
+    padding-top: 2rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 1.5rem;
-    font-family: var(--font-ui);
-    font-size: 0.925rem;
+    gap: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
     color: var(--text-muted);
   }}
-  .article-footer a {{
+  .post-footer a {{
     color: var(--link-color);
     text-decoration: none;
   }}
-  .article-footer a:hover {{ text-decoration: underline; }}
+  .post-footer a:hover {{ text-decoration: underline; }}
 
   /* Back to Top Floating Button */
   .back-to-top {{
@@ -656,8 +555,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     background: var(--btn-bg);
     border: 1px solid var(--btn-border);
     color: var(--btn-text);
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -665,9 +564,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     cursor: pointer;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s, border-color 0.2s;
-    font-size: 1.25rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.25s, transform 0.25s;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     z-index: 80;
   }}
   .back-to-top.visible {{
@@ -675,16 +574,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     pointer-events: auto;
   }}
   .back-to-top:hover {{
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: var(--link-color);
   }}
 
   @media (max-width: 640px) {{
-    body {{ padding: 0 1rem 3.5rem 1rem; }}
-    h1.article-title {{ font-size: 1.95rem; }}
-    .article-meta {{ gap: 0.75rem; font-size: 0.85rem; }}
-    th, td {{ padding: 0.75rem 0.85rem; font-size: 0.85rem; }}
-    .insight-box {{ padding: 1.15rem 1.35rem; }}
+    .header-wrapper {{ padding: 0 15px; }}
+    .site-nav {{ gap: 0.75rem; }}
+    .post-wrapper {{ padding: 0 16px; }}
+    h1.post-title {{ font-size: 1.85rem; }}
+    .post-content {{ font-size: 1.05rem; }}
+    th, td {{ padding: 0.65rem 0.75rem; font-size: 0.85rem; }}
   }}
 </style>
 </head>
@@ -692,69 +592,64 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 <div id="progress-bar"></div>
 
-<div class="top-nav-wrapper">
-  <header class="top-nav">
-    <a href="../" class="nav-brand">
-      ← <span class="author-name">Sankalp Chudmunge</span> / articles
+<header class="site-header">
+  <div class="header-wrapper">
+    <a href="../" class="site-title">
+      <strong>Sankalp</strong> Chudmunge
     </a>
-    <div class="nav-controls">
-      <button id="fontToggle" class="pill-control" aria-label="Toggle serif / sans font">
-        <span id="fontIcon">🔤</span>
-        <span id="fontText">Sans</span>
+    <nav class="site-nav">
+      <a href="https://github.com/s-chudmunge" target="_blank" rel="noopener">GitHub</a>
+      <button id="fontToggle" class="control-btn" aria-label="Toggle serif / sans font">
+        <span id="fontIcon">📖</span>
+        <span id="fontText">Serif</span>
       </button>
-      <button id="themeToggle" class="pill-control" aria-label="Toggle dark mode">
+      <button id="themeToggle" class="control-btn" aria-label="Toggle dark mode">
         <span id="themeIcon">🌙</span>
         <span id="themeText">Dark</span>
       </button>
-    </div>
-  </header>
-</div>
+    </nav>
+  </div>
+</header>
 
-<div class="layout-grid">
-  <main class="article-main">
-    <article>
-      <header class="article-header">
-        <span class="badge-subject">{subject}</span>
-        <h1 class="article-title">{title}</h1>
-        <div class="article-meta">
-          <span>✍️ <strong>{author}</strong></span>
-          <span>📅 {date}</span>
-          <span>⏱️ {read_time} min read</span>
-        </div>
+<div class="page-content">
+  <div class="post-wrapper">
+    <main class="post">
+      <header class="post-header">
+        <span class="post-category">{subject}</span>
+        <h1 class="post-title">{title}</h1>
+        <p class="post-meta">
+          <span>{date}</span>
+          <span class="separator">•</span>
+          <span>By {author}</span>
+          <span class="separator">•</span>
+          <span>{read_time} min read</span>
+        </p>
       </header>
-
-      {hero_section}
 
       {insight_section}
 
-      <div class="article-content">
-        {body_html}
-      </div>
+      {hero_section}
 
-      <footer class="article-footer">
+      <article class="post-content">
+        {body_html}
+      </article>
+
+      <footer class="post-footer">
         <div>
-          Published by <strong>{author}</strong> • GitHub Pages
+          Published by <strong>{author}</strong> • <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">articles repository</a>
         </div>
         <div>
-          <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub Repository</a>
+          <a href="#top" onclick="window.scrollTo({{ top: 0, behavior: 'smooth' }}); return false;">Back to top ↑</a>
         </div>
       </footer>
-    </article>
-  </main>
-
-  <!-- Sticky Sidebar Table of Contents -->
-  <aside class="toc-sidebar">
-    <div class="toc-title">On this page</div>
-    <ul class="toc-list">
-      {toc_html}
-    </ul>
-  </aside>
+    </main>
+  </div>
 </div>
 
 <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
 
 <script>
-  // Reading Progress Bar & Back-to-Top
+  // Reading Progress Bar & Back to top
   window.addEventListener('scroll', () => {{
     const winScroll = document.documentElement.scrollTop;
     const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
@@ -762,35 +657,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     document.getElementById('progress-bar').style.width = scrolled + '%';
 
     const btt = document.getElementById('backToTop');
-    if (winScroll > 450) {{
+    if (winScroll > 400) {{
       btt.classList.add('visible');
     }} else {{
       btt.classList.remove('visible');
     }}
-
-    // Scroll spy for Table of Contents
-    const headings = document.querySelectorAll('.article-content h2, .article-content h3');
-    let currentId = '';
-    headings.forEach(h => {{
-      const rect = h.getBoundingClientRect();
-      if (rect.top <= 120) {{
-        currentId = h.id;
-      }}
-    }});
-    document.querySelectorAll('.toc-link').forEach(link => {{
-      if (link.getAttribute('href') === '#' + currentId) {{
-        link.classList.add('active');
-      }} else {{
-        link.classList.remove('active');
-      }}
-    }});
   }});
 
   document.getElementById('backToTop').addEventListener('click', () => {{
     window.scrollTo({{ top: 0, behavior: 'smooth' }});
   }});
 
-  // Theme Toggler with LocalStorage & System Preference
+  // Theme Toggler
   const themeToggle = document.getElementById('themeToggle');
   const themeIcon = document.getElementById('themeIcon');
   const themeText = document.getElementById('themeText');
@@ -825,37 +703,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
   }});
 
-  // Font Switcher (Serif vs Sans)
+  // Font Switcher (Serif / Sans)
   const fontToggle = document.getElementById('fontToggle');
   const fontIcon = document.getElementById('fontIcon');
   const fontText = document.getElementById('fontText');
 
   function initFont() {{
     const savedFont = localStorage.getItem('articles_font');
-    if (savedFont === 'sans') {{
-      document.documentElement.setAttribute('data-font', 'sans');
-      fontIcon.textContent = '📖';
-      fontText.textContent = 'Serif';
-    }} else {{
-      document.documentElement.removeAttribute('data-font');
+    if (savedFont === 'serif') {{
+      document.documentElement.setAttribute('data-font', 'serif');
       fontIcon.textContent = '🔤';
       fontText.textContent = 'Sans';
+    }} else {{
+      document.documentElement.removeAttribute('data-font');
+      fontIcon.textContent = '📖';
+      fontText.textContent = 'Serif';
     }}
   }}
   initFont();
 
   fontToggle.addEventListener('click', () => {{
-    const isSans = document.documentElement.getAttribute('data-font') === 'sans';
-    if (isSans) {{
+    const isSerif = document.documentElement.getAttribute('data-font') === 'serif';
+    if (isSerif) {{
       document.documentElement.removeAttribute('data-font');
-      localStorage.setItem('articles_font', 'serif');
-      fontIcon.textContent = '🔤';
-      fontText.textContent = 'Sans';
-    }} else {{
-      document.documentElement.setAttribute('data-font', 'sans');
       localStorage.setItem('articles_font', 'sans');
       fontIcon.textContent = '📖';
       fontText.textContent = 'Serif';
+    }} else {{
+      document.documentElement.setAttribute('data-font', 'serif');
+      localStorage.setItem('articles_font', 'serif');
+      fontIcon.textContent = '🔤';
+      fontText.textContent = 'Sans';
     }}
   }});
 
@@ -879,7 +757,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     wrapper.appendChild(btn);
   }});
 
-  // Fix image paths for subdirectories & GitHub Pages
+  // Fix image paths
   (function() {{
     const isGH = window.location.pathname.startsWith('/articles');
     document.querySelectorAll('img').forEach(img => {{
@@ -917,14 +795,12 @@ def parse_markdown_file(filepath):
     return frontmatter, body
 
 def process_custom_blocks(md_text):
-    # Process ```tweet <tweet_id> ```
     def tweet_repl(m):
         tweet_id = m.group(1).strip()
         return f'<div class="tweet-container"><blockquote class="twitter-tweet" data-dnt="true"><a href="https://twitter.com/x/status/{tweet_id}"></a></blockquote></div>'
 
     md_text = re.sub(r'```tweet\s*\n(.*?)\n```', tweet_repl, md_text, flags=re.DOTALL)
 
-    # Process ```loom <video_id> ```
     def loom_repl(m):
         loom_id = m.group(1).strip().replace("https://www.loom.com/share/", "").replace("https://loom.com/share/", "")
         return f'<div class="loom-container"><iframe src="https://www.loom.com/embed/{loom_id}" allowfullscreen></iframe></div>'
@@ -952,7 +828,6 @@ def restore_latex(html_text, placeholders):
     return html_text
 
 def extract_headings_and_add_ids(html_text):
-    headings = []
     used_slugs = set()
 
     def repl(m):
@@ -961,15 +836,13 @@ def extract_headings_and_add_ids(html_text):
         clean_text = re.sub(r'<.*?>', '', text)
         slug = re.sub(r'[^a-zA-Z0-9]+', '-', clean_text.lower()).strip('-')
         if not slug:
-            slug = f"section-{len(headings)}"
+            slug = f"section-{len(used_slugs)}"
         if slug in used_slugs:
-            slug = f"{slug}-{len(headings)}"
+            slug = f"{slug}-{len(used_slugs)}"
         used_slugs.add(slug)
-        headings.append({'level': int(level), 'title': clean_text, 'id': slug})
         return f'<h{level} id="{slug}"><a href="#{slug}" class="heading-anchor" aria-hidden="true">#</a>{text}</h{level}>'
 
-    html_with_ids = re.sub(r'<h([23])>(.*?)</h\1>', repl, html_text, flags=re.DOTALL)
-    return html_with_ids, headings
+    return re.sub(r'<h([23])>(.*?)</h\1>', repl, html_text, flags=re.DOTALL)
 
 def build_schema_json(frontmatter, canonical_url, og_image, excerpt):
     title = frontmatter.get('title', 'Article')
@@ -1049,7 +922,7 @@ def build_article_html(frontmatter, body_html, raw_body):
     slug = frontmatter.get('slug', 'article')
     author = frontmatter.get('author', 'Sankalp Chudmunge')
     date = frontmatter.get('date', '')
-    subject = frontmatter.get('subject', 'Article')
+    subject = frontmatter.get('subject', 'Machine Learning')
     hero_image = frontmatter.get('heroImage', '')
     excerpt = frontmatter.get('excerpt', '')
     technical_insight = frontmatter.get('technicalInsight', '')
@@ -1067,37 +940,44 @@ def build_article_html(frontmatter, body_html, raw_body):
     except Exception:
         published_iso = "2026-09-25T00:00:00Z"
 
-    # Convert root-relative image paths to relative paths for depth-1 directories
+    # Convert root-relative image paths to relative paths
     rel_hero = hero_image.lstrip('/')
     hero_section = ""
     if hero_image:
-        hero_section = f'<div class="hero-image-wrapper"><img src="../{rel_hero}" alt="{title}"></div>'
+        hero_section = f'<div class="img_row"><img src="../{rel_hero}" alt="{title}"></div>'
 
+    # Academic blockquote style for technical insight
     insight_section = ""
-    if technical_insight:
-        insight_section = f'''<div class="insight-box">
-          <div class="insight-title">⚡ Technical Insight</div>
-          <div class="insight-text">{technical_insight}</div>
-        </div>'''
+    if technical_insight or excerpt:
+        lead_text = technical_insight if technical_insight else excerpt
+        insight_section = f'''<blockquote>
+          <p><strong>Overview:</strong> {lead_text}</p>
+        </blockquote>'''
 
     # Rewrite /images/ to ../images/ in body_html
     body_html = re.sub(r'src="/images/', r'src="../images/', body_html)
 
-    # Add IDs to headings and extract TOC
-    body_html, headings = extract_headings_and_add_ids(body_html)
+    # Wrap figures in academic .img_row and .caption
+    def figure_repl(m):
+        img_tag = m.group(1)
+        caption_text = m.group(2)
+        return f'<div class="img_row">{img_tag}</div>\n<div class="caption">{caption_text}</div>'
+
+    # Match image paragraph followed by caption: <p><img ... /></p>\n<p><em>Figure ...</em></p>
+    body_html = re.sub(
+        r'<p>(<img\s+[^>]+>)</p>\s*<p>(<em>(?:Figure|Table)\s+\d+:.*?</em>)</p>',
+        figure_repl,
+        body_html
+    )
+
+    # Wrap any standalone image paragraph in .img_row
+    body_html = re.sub(r'<p>(<img\s+[^>]+>)</p>', r'<div class="img_row">\1</div>', body_html)
+
+    # Add IDs to headings
+    body_html = extract_headings_and_add_ids(body_html)
 
     # Wrap tables in responsive wrapper
     body_html = re.sub(r'(<table>.*?</table>)', r'<div class="table-wrapper">\1</div>', body_html, flags=re.DOTALL)
-
-    # Style captions following images: <p><em>Figure ...</em></p>
-    body_html = re.sub(r'<p>(<em>(?:Figure|Table)\s+\d+:.*?</em>)</p>', r'<div class="figure-caption">\1</div>', body_html)
-
-    # Build Table of Contents HTML
-    toc_items = []
-    for h in headings:
-        cls = "toc-item h3" if h['level'] == 3 else "toc-item"
-        toc_items.append(f'<li class="{cls}"><a href="#{h["id"]}" class="toc-link">{h["title"]}</a></li>')
-    toc_html = "\n      ".join(toc_items)
 
     schema_json = build_schema_json(frontmatter, canonical_url, og_image, excerpt)
 
@@ -1117,12 +997,10 @@ def build_article_html(frontmatter, body_html, raw_body):
         read_time=read_time,
         hero_section=hero_section,
         insight_section=insight_section,
-        body_html=body_html,
-        toc_html=toc_html
+        body_html=body_html
     )
 
 def generate_sitemap_and_robots(articles_meta):
-    # sitemap.xml
     sitemap = ['<?xml version="1.0" encoding="UTF-8"?>',
                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
                '  <url>',
@@ -1148,7 +1026,6 @@ def generate_sitemap_and_robots(articles_meta):
         f.write('\n'.join(sitemap))
     print("✓ Generated: sitemap.xml")
 
-    # robots.txt
     robots_path = os.path.join(PROJECT_DIR, 'robots.txt')
     with open(robots_path, 'w', encoding='utf-8') as f:
         f.write(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n")
@@ -1179,7 +1056,6 @@ def build_all():
 
         full_html = build_article_html(frontmatter, body_html, raw_body)
 
-        # Output to <slug>/index.html
         slug_dir = os.path.join(PROJECT_DIR, slug)
         os.makedirs(slug_dir, exist_ok=True)
         slug_out = os.path.join(slug_dir, 'index.html')
@@ -1196,10 +1072,9 @@ def build_all():
             'heroImage': frontmatter.get('heroImage', '')
         })
 
-    # Generate sitemap and robots
     generate_sitemap_and_robots(articles_meta)
 
-    # Minimal clean index.html at root
+    # Clean minimal redirect at root
     if articles_meta:
         first_article = articles_meta[0]
         root_index = f"""<!DOCTYPE html>
