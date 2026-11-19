@@ -40,13 +40,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="article:published_time" content="{published_iso}">
-<meta property="article:author" content="https://github.com/s-chudmunge">
+<meta property="article:author" content="https://x.com/csankalp21">
 <meta property="article:section" content="{subject}">
 
 <!-- Twitter Cards -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@CompleteSkeptic">
-<meta name="twitter:creator" content="@CompleteSkeptic">
+<meta name="twitter:site" content="@csankalp21">
+<meta name="twitter:creator" content="@csankalp21">
 <meta name="twitter:url" content="{canonical_url}">
 <meta name="twitter:title" content="{full_meta_title}">
 <meta name="twitter:description" content="{excerpt}">
@@ -301,6 +301,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   .post-meta span.separator {{
     opacity: 0.4;
+  }}
+  .post-meta a {{
+    color: var(--text-main);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s;
+  }}
+  .post-meta a:hover {{
+    color: var(--link-color);
+    text-decoration: underline;
   }}
 
   /* Post Content Typography */
@@ -649,6 +659,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <strong>Sankalp</strong> Chudmunge
     </a>
     <nav class="site-nav">
+      <a href="https://x.com/csankalp21" target="_blank" rel="noopener">X</a>
       <a href="https://github.com/s-chudmunge" target="_blank" rel="noopener">GitHub</a>
       <button id="fontToggle" class="control-btn" aria-label="Toggle serif / sans font">
         <span id="fontIcon">📖</span>
@@ -672,7 +683,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <p class="post-meta">
           <span>{date}</span>
           <span class="separator">•</span>
-          <span>By {author}</span>
+          <span>By <a href="https://x.com/csankalp21" target="_blank" rel="noopener">{author}</a></span>
           <span class="separator">•</span>
           <span>{read_time} min read</span>
         </p>
@@ -688,7 +699,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
       <footer class="post-footer">
         <div>
-          Published by <strong>{author}</strong> • <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">articles repository</a>
+          Written by <strong><a href="https://x.com/csankalp21" target="_blank" rel="noopener">{author}</a></strong> (<a href="https://x.com/csankalp21" target="_blank" rel="noopener">@csankalp21</a>) • <a href="https://github.com/s-chudmunge/articles" target="_blank" rel="noopener">GitHub</a>
         </div>
         <div>
           <a href="#top" onclick="window.scrollTo({{ top: 0, behavior: 'smooth' }}); return false;">Back to top ↑</a>
@@ -931,12 +942,16 @@ def build_schema_json(frontmatter, canonical_url, og_image, excerpt, full_meta_t
                 "author": {
                     "@type": "Person",
                     "name": author,
-                    "url": "https://github.com/s-chudmunge"
+                    "url": "https://x.com/csankalp21",
+                    "sameAs": [
+                        "https://x.com/csankalp21",
+                        "https://github.com/s-chudmunge"
+                    ]
                 },
                 "publisher": {
                     "@type": "Person",
                     "name": author,
-                    "url": "https://github.com/s-chudmunge"
+                    "url": "https://x.com/csankalp21"
                 },
                 "keywords": keywords_list,
                 "articleSection": frontmatter.get('subject', 'Machine Learning')
